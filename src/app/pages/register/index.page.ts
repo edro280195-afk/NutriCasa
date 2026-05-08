@@ -90,7 +90,7 @@ import { AuthService } from '../../services/auth.service';
       </div>
 
       <div class="terms">
-        Al registrarte aceptas los <a href="#">términos de servicio</a> y el <a href="#">aviso de privacidad</a>.
+        Al registrarte aceptas los <a routerLink="/legal/terms">términos de servicio</a> y el <a routerLink="/legal/privacy">aviso de privacidad</a>.
       </div>
     </div>
   </div>

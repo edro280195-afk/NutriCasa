@@ -1,10 +1,11 @@
-import { Component, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, OnInit, signal, inject } from '@angular/core';
+import { ProgressService } from '../../services/progress.service';
+import { ProgressSummaryDto, WeightEntryDto, CheckinDayDto, WeeklyMacrosDto } from '../../models/progress.models';
 
 @Component({
   selector: 'app-progress',
   standalone: true,
-  imports: [RouterLink],
+  imports: [],
   template: `
   <div class="page">
     <div class="page-header">
@@ -19,143 +20,125 @@ import { RouterLink } from '@angular/router';
       </div>
     </div>
 
-    <div class="progress-hero">
-      <div class="progress-eyebrow">Tu progreso</div>
-      <h1 class="progress-title">
-        <span class="italic">12 días</span> de racha
-      </h1>
-      <div class="progress-meta">Desde el 26 de abril · 87% de adherencia</div>
-    </div>
-
-    <div class="weight-card">
-      <div class="weight-header">
-        <span class="weight-label">Peso corporal</span>
-        <span class="weight-change">-1.2 kg</span>
+    @if (summary(); as s) {
+      <div class="progress-hero">
+        <div class="progress-eyebrow">Tu progreso</div>
+        <h1 class="progress-title">
+          <span class="italic">{{ s.streakDays }}</span> días de racha
+        </h1>
+        <div class="progress-meta">Desde el {{ s.startDate }} · {{ s.overallAdherence }}% de adherencia</div>
       </div>
-      <div class="weight-value">{{ lastWeight }} <span class="small">kg</span></div>
 
-      <div class="chart">
-        @for (bar of weightBars(); track bar.label) {
-          <div class="chart-bar-wrap">
-            <div class="chart-bar" [style.height.%]="bar.height" [style.background]="bar.color"></div>
-            <div class="chart-label">{{ bar.label }}</div>
+      <div class="weight-card">
+        <div class="weight-header">
+          <span class="weight-label">Peso corporal</span>
+          <span class="weight-change">{{ s.weightChange > 0 ? '+' : '' }}{{ s.weightChange }} kg</span>
+        </div>
+        <div class="weight-value">{{ s.currentWeight }} <span class="small">kg</span></div>
+
+        <div class="chart">
+          @for (bar of weightBars(); track $index) {
+            <div class="chart-bar-wrap">
+              <div class="chart-bar" [style.height.%]="bar.heightPercent" [style.background]="bar.color"></div>
+              <div class="chart-label">{{ bar.date }}</div>
+            </div>
+          }
+        </div>
+
+        <div class="weight-footer">
+          <div class="weight-compare">
+            <span>Inicio: <strong>{{ s.startWeight }} kg</strong></span>
+            <span>Actual: <strong>{{ s.currentWeight }} kg</strong></span>
+            <span>Meta: <strong>{{ s.goalWeight }} kg</strong></span>
           </div>
-        }
+        </div>
       </div>
 
-      <div class="weight-footer">
-        <div class="weight-compare">
-          <span>Inicio: <strong>87.4 kg</strong></span>
-          <span>Actual: <strong>{{ lastWeight }} kg</strong></span>
-          <span>Meta: <strong>75.0 kg</strong></span>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="stat-num">{{ s.weeklyAdherence }}%</div>
+          <div class="stat-desc">Adherencia semanal</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-blue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+          </div>
+          <div class="stat-num">{{ s.streakDays }}</div>
+          <div class="stat-desc">Días consecutivos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-coral">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M16.5 7.5L12 12l4.5 4.5"/><path d="M7.5 7.5L12 12l-4.5 4.5"/></svg>
+          </div>
+          <div class="stat-num">{{ s.checkinsCompleted }}/{{ s.totalCheckins }}</div>
+          <div class="stat-desc">Check-ins completados</div>
         </div>
       </div>
-    </div>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon stat-icon-green">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <div class="checkin-heatmap">
+        <div class="section-head">
+          <h2 class="section-title">Check-ins</h2>
+          <span class="section-badge">Últimos 30 días</span>
         </div>
-        <div class="stat-num">87%</div>
-        <div class="stat-desc">Adherencia semanal</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon stat-icon-blue">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        <div class="heatmap-grid">
+          @for (day of heatmapDays(); track $index) {
+            <div class="heat-day" [class]="'heat-' + day.level" [title]="day.date"></div>
+          }
         </div>
-        <div class="stat-num">12</div>
-        <div class="stat-desc">Días consecutivos</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon stat-icon-coral">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M16.5 7.5L12 12l4.5 4.5"/><path d="M7.5 7.5L12 12l-4.5 4.5"/></svg>
+        <div class="heatmap-legend">
+          <span>Sin registro</span>
+          <span class="heat-sample heat-0"></span>
+          <span class="heat-sample heat-1"></span>
+          <span class="heat-sample heat-2"></span>
+          <span class="heat-sample heat-3"></span>
+          <span>Completado</span>
         </div>
-        <div class="stat-num">11/12</div>
-        <div class="stat-desc">Check-ins completados</div>
       </div>
-    </div>
 
-    <div class="checkin-heatmap">
-      <div class="section-head">
-        <h2 class="section-title">Check-ins</h2>
-        <span class="section-badge">Últimos 30 días</span>
-      </div>
-      <div class="heatmap-grid">
-        @for (day of heatmap(); track day.label) {
-          <div class="heat-day" [class]="'heat-' + day.level" [title]="day.label"></div>
-        }
-      </div>
-      <div class="heatmap-legend">
-        <span>Sin registro</span>
-        <span class="heat-sample heat-0"></span>
-        <span class="heat-sample heat-1"></span>
-        <span class="heat-sample heat-2"></span>
-        <span class="heat-sample heat-3"></span>
-        <span>Completado</span>
-      </div>
-    </div>
-
-    <div class="macro-card">
-      <div class="section-head">
-        <h2 class="section-title">Macros promedio</h2>
-        <span class="section-badge">Esta semana</span>
-      </div>
-      <div class="macro-rows">
-        <div class="macro-row">
-          <div class="macro-row-label">
-            <span>Calorías</span>
-            <span class="macro-row-val">1,860 / 2,180</span>
+      @if (weeklyMacros(); as m) {
+        <div class="macro-card">
+          <div class="section-head">
+            <h2 class="section-title">Macros promedio</h2>
+            <span class="section-badge">Esta semana</span>
           </div>
-          <div class="macro-row-bar"><div class="macro-row-fill" style="width:85%"></div></div>
-        </div>
-        <div class="macro-row">
-          <div class="macro-row-label">
-            <span>Proteína</span>
-            <span class="macro-row-val">138 / 145 g</span>
+          <div class="macro-rows">
+            <div class="macro-row">
+              <div class="macro-row-label">
+                <span>Calorías</span>
+                <span class="macro-row-val">{{ fmt(m.calories.current) }} / {{ fmt(m.calories.goal) }}</span>
+              </div>
+              <div class="macro-row-bar"><div class="macro-row-fill" [style.width.%]="macroPercent(m.calories)"></div></div>
+            </div>
+            <div class="macro-row">
+              <div class="macro-row-label">
+                <span>Proteína</span>
+                <span class="macro-row-val">{{ m.protein.current }} / {{ m.protein.goal }} g</span>
+              </div>
+              <div class="macro-row-bar"><div class="macro-row-fill protein" [style.width.%]="macroPercent(m.protein)"></div></div>
+            </div>
+            <div class="macro-row">
+              <div class="macro-row-label">
+                <span>Grasa</span>
+                <span class="macro-row-val">{{ m.fat.current }} / {{ m.fat.goal }} g</span>
+              </div>
+              <div class="macro-row-bar"><div class="macro-row-fill fat" [style.width.%]="macroPercent(m.fat)"></div></div>
+            </div>
+            <div class="macro-row">
+              <div class="macro-row-label">
+                <span>Carbs</span>
+                <span class="macro-row-val">{{ m.carbs.current }} / {{ m.carbs.goal }} g</span>
+              </div>
+              <div class="macro-row-bar"><div class="macro-row-fill carbs" [style.width.%]="macroPercent(m.carbs)"></div></div>
+            </div>
           </div>
-          <div class="macro-row-bar"><div class="macro-row-fill protein" style="width:95%"></div></div>
         </div>
-        <div class="macro-row">
-          <div class="macro-row-label">
-            <span>Grasa</span>
-            <span class="macro-row-val">152 / 165 g</span>
-          </div>
-          <div class="macro-row-bar"><div class="macro-row-fill fat" style="width:92%"></div></div>
-        </div>
-        <div class="macro-row">
-          <div class="macro-row-label">
-            <span>Carbs</span>
-            <span class="macro-row-val">18 / 25 g</span>
-          </div>
-          <div class="macro-row-bar"><div class="macro-row-fill carbs" style="width:72%"></div></div>
-        </div>
-      </div>
-    </div>
+      }
+    }
   </div>
 
-  <nav class="bottom-nav">
-    <a routerLink="/dashboard" class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      Hoy
-    </a>
-    <a routerLink="/plan" class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      Plan
-    </a>
-    <a routerLink="/family" class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Familia
-    </a>
-    <a class="nav-item active">
-      <svg viewBox="0 0 24 24" fill="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-      Avances
-    </a>
-    <a routerLink="/profile" class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Yo
-    </a>
-  </nav>
   `,
   styles: [`
     :host { display: contents; }
@@ -312,68 +295,37 @@ import { RouterLink } from '@angular/router';
     .macro-row-fill.fat { background: var(--mint); }
     .macro-row-fill.carbs { background: var(--coral); }
 
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 32px);
-      max-width: 448px;
-      background: var(--pine);
-      border-radius: var(--r-pill);
-      margin: 16px;
-      padding: 8px;
-      display: flex;
-      justify-content: space-around;
-      z-index: 100;
-      box-shadow: var(--shadow-pine);
-    }
-    .nav-item {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; gap: 4px;
-      padding: 10px 0;
-      color: rgba(248,244,236,0.55);
-      font-size: 10px; font-weight: 600;
-      letter-spacing: 0.06em; text-transform: uppercase;
-      border-radius: var(--r-pill);
-      cursor: pointer;
-    }
-    .nav-item.active { background: var(--mint); color: var(--pine-darker); }
-    .nav-item svg { width: 20px; height: 20px; }
-
     .page-header { animation: slideDown 0.5s var(--ease-out); }
     .progress-hero { animation: slideUp 0.7s var(--ease-out) 0.05s both; }
     .weight-card { animation: slideUp 0.7s var(--ease-out) 0.1s both; }
     .stats-grid { animation: slideUp 0.7s var(--ease-out) 0.15s both; }
     .checkin-heatmap { animation: slideUp 0.7s var(--ease-out) 0.2s both; }
     .macro-card { animation: slideUp 0.7s var(--ease-out) 0.25s both; }
-    .bottom-nav { animation: slideUp 0.5s var(--ease-out) 0.3s both; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
-export class ProgressPage {
-  readonly lastWeight = '86.2';
+export class ProgressPage implements OnInit {
+  private readonly progressService = inject(ProgressService);
 
-  readonly weightBars = signal([
-    { label: '26 abr', height: 95, color: 'var(--mint)' },
-    { label: '28 abr', height: 93, color: 'var(--mint)' },
-    { label: '30 abr', height: 91, color: 'var(--mint-light)' },
-    { label: '2 may', height: 89, color: 'var(--mint-light)' },
-    { label: '4 may', height: 87, color: 'var(--mint)' },
-    { label: '6 may', height: 85, color: 'var(--lake)' },
-    { label: '8 may', height: 83, color: 'var(--lake)' },
-  ]);
+  readonly summary = signal<ProgressSummaryDto | null>(null);
+  readonly weightBars = signal<WeightEntryDto[]>([]);
+  readonly heatmapDays = signal<CheckinDayDto[]>([]);
+  readonly weeklyMacros = signal<WeeklyMacrosDto | null>(null);
 
-  get heatmap() {
-    return () => {
-      const days: { label: string; level: number }[] = [];
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const label = d.toLocaleDateString('es-MX', { weekday: 'short' });
-        const level = i < 12 ? (i % 3 === 0 ? 3 : i % 2 === 0 ? 2 : 1) : 0;
-        days.push({ label, level });
-      }
-      return days;
-    };
+  ngOnInit(): void {
+    this.progressService.getSummary().subscribe(s => this.summary.set(s));
+    this.progressService.getWeightHistory().subscribe(b => this.weightBars.set(b));
+    this.progressService.getCheckins().subscribe(d => this.heatmapDays.set(d));
+    this.progressService.getWeeklyMacros().subscribe(m => this.weeklyMacros.set(m));
+  }
+
+  macroPercent(macro: { current: number; goal: number }): number {
+    if (!macro.goal) return 0;
+    return Math.min(Math.round((macro.current / macro.goal) * 100), 100);
+  }
+
+  fmt(value: number): string {
+    return Math.round(value).toLocaleString('es-MX');
   }
 }

@@ -98,7 +98,7 @@ import { AuthService } from '../../services/auth.service';
       </div>
 
       <div class="terms">
-        Al entrar aceptas los <a href="#">términos de servicio</a> y el <a href="#">aviso de privacidad</a>.
+        Al entrar aceptas los <a routerLink="/legal/terms">términos de servicio</a> y el <a routerLink="/legal/privacy">aviso de privacidad</a>.
         NutriCasa no sustituye atención médica profesional.
       </div>
     </div>

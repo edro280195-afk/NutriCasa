@@ -60,7 +60,7 @@ export interface ActivityRequest {
 export type BudgetMode = 'economic' | 'pantry_basic' | 'simple_kitchen' | 'busy_parent' | 'athletic' | 'gourmet';
 
 export interface BudgetModeRequest {
-  budgetModeId: string;
+  budgetModeCode: string;
 }
 
 export interface MedicalProfileRequest {

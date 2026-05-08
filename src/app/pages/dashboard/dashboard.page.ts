@@ -265,28 +265,6 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
     </div>
   </div>
 
-  <nav class="bottom-nav">
-    <a class="nav-item active">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      Hoy
-    </a>
-    <a routerLink="/plan" class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      Plan
-    </a>
-    <a routerLink="/family" class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Familia
-    </a>
-    <a routerLink="/progress" class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-      Avances
-    </a>
-    <a routerLink="/profile" class="nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Yo
-    </a>
-  </nav>
   `,
   styles: [`:host { display: contents; }
     .dash { max-width: 480px; margin: 0 auto; padding: 0 20px 120px; background: var(--cream); position: relative; z-index: 1; }
@@ -421,10 +399,6 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
     .family-status strong { color: var(--pine); font-weight: 600; }
     .family-cta { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: var(--pine); color: var(--cream); border-radius: var(--r-pill); font-size: 13px; font-weight: 600; position: relative; z-index: 1; transition: transform 0.2s var(--ease-out); }
     .family-cta:hover { transform: translateX(2px); }
-    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; background: var(--pine); border-radius: var(--r-pill); margin: 16px; padding: 8px; display: flex; justify-content: space-around; z-index: 100; box-shadow: var(--shadow-pine); }
-    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: rgba(248,244,236,0.55); font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; border-radius: var(--r-pill); cursor: pointer; }
-    .nav-item.active { background: var(--mint); color: var(--pine-darker); }
-    .nav-item svg { width: 20px; height: 20px; }
     .loading-state { text-align: center; padding: 60px 20px; }
     .loading-state p { font-size: 15px; color: var(--ink-soft); margin-top: 20px; }
     .spinner-lg { width: 40px; height: 40px; border: 3px solid var(--line); border-top-color: var(--pine); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -18,7 +18,9 @@ export class ApiException {
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly baseUrl = 'https://localhost:7120/api';
+  private readonly baseUrl = isDevMode()
+    ? 'https://localhost:7120/api'
+    : 'https://nutricasa-api.onrender.com/api';
 
   constructor(private http: HttpClient) {}
 

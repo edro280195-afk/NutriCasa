@@ -1,7 +1,8 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { OnboardingService } from '../../services/onboarding.service';
+import { AuthService } from '../../services/auth.service';
 import { LottieAnimationComponent } from '../../components/lottie-animation/lottie-animation.component';
 import type {
   GroupRequest, BasicDataRequest, MetricsRequest, BodyTypeRequest,
@@ -80,6 +81,9 @@ const STEPS = [
             <div class="invite-input-wrap">
               <input type="text" placeholder="CÓDIGO" maxlength="10" [value]="inviteCode()" (input)="inviteCode.set($any($event.target).value)">
               <span class="invite-pill">Invitar</span>
+              @if (step() === 0 && groupAction() === 'join' && inviteCode().trim().length === 0) {
+                <p style="font-size:12px;color:var(--coral);margin:8px 0 0;">Ingresa el código de invitación.</p>
+              }
             </div>
           }
         </div>
@@ -96,6 +100,12 @@ const STEPS = [
             <div class="field-input-wrap">
               <input id="dob" type="date" formControlName="dateOfBirth">
             </div>
+            @if (basicForm.get('dateOfBirth')?.invalid && basicForm.get('dateOfBirth')?.touched) {
+              <p style="font-size:12px;color:var(--ink-muted);margin-top:4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Indica tu fecha de nacimiento
+              </p>
+            }
           </div>
           <div class="field">
             <label class="field-label">Género</label>
@@ -120,14 +130,26 @@ const STEPS = [
             <div class="field">
               <label class="field-label" for="weight">Peso <span class="field-hint">(kg)</span></label>
               <div class="field-input-wrap">
-                <input id="weight" type="number" formControlName="weightKg" placeholder="68" step="0.1">
-              </div>
+              <input id="weight" type="number" formControlName="weightKg" placeholder="0" step="0.1">
             </div>
+            @if (metricsForm.get('weightKg')?.invalid && metricsForm.get('weightKg')?.touched) {
+              <p style="font-size:12px;color:var(--ink-muted);margin-top:4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Ingresa tu peso
+              </p>
+            }
+          </div>
             <div class="field">
               <label class="field-label" for="height">Altura <span class="field-hint">(cm)</span></label>
               <div class="field-input-wrap">
-                <input id="height" type="number" formControlName="heightCm" placeholder="170" step="1">
+                <input id="height" type="number" formControlName="heightCm" placeholder="0" step="1">
               </div>
+              @if (metricsForm.get('heightCm')?.invalid && metricsForm.get('heightCm')?.touched) {
+                <p style="font-size:12px;color:var(--ink-muted);margin-top:4px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  Ingresa tu altura
+                </p>
+              }
             </div>
           </div>
           <div class="field">
@@ -275,39 +297,47 @@ const STEPS = [
         <h2 class="step-title">Tu <span class="italic">compromiso</span></h2>
         <p class="step-subtitle">Establece tu meta y acepta los términos para comenzar.</p>
 
-        <div class="disclaimer-box">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <div>
-            <strong>Aviso importante</strong>
-            <p>NutriCasa no sustituye la atención médica profesional. Consulta a tu médico antes de iniciar cualquier plan alimenticio, especialmente si tienes condiciones preexistentes.</p>
+        <form [formGroup]="goalForm">
+          <div class="disclaimer-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div>
+              <strong>Aviso importante</strong>
+              <p>NutriCasa no sustituye la atención médica profesional. Consulta a tu médico antes de iniciar cualquier plan alimenticio, especialmente si tienes condiciones preexistentes.</p>
+            </div>
           </div>
-        </div>
 
-        <div class="field">
-          <label class="field-label">¿Cuál es tu objetivo principal?</label>
-          <div class="goal-grid">
-            @for (g of goals; track g.value) {
-              <button type="button" class="goal-btn" [class.selected]="goalForm.get('goalType')?.value === g.value" (click)="goalForm.patchValue({goalType: g.value})">
-                <span [innerHTML]="g.icon" style="font-size: 22px;"></span>
-                <span>{{ g.label }}</span>
-              </button>
-            }
+          <div class="field">
+            <label class="field-label">¿Cuál es tu objetivo principal?</label>
+            <div class="goal-grid">
+              @for (g of goals; track g.value) {
+                <button type="button" class="goal-btn" [class.selected]="goalForm.get('goalType')?.value === g.value" (click)="goalForm.patchValue({goalType: g.value})">
+                  <span [innerHTML]="g.icon" style="font-size: 22px;"></span>
+                  <span>{{ g.label }}</span>
+                </button>
+              }
+            </div>
           </div>
-        </div>
 
-        <div class="field">
-          <label class="field-label" for="goalDesc">Describe tu meta <span class="field-hint">(opcional)</span></label>
-          <div class="field-input-wrap">
-            <textarea id="goalDesc" formControlName="goalDescription" rows="3" placeholder="Ej. Quiero perder 8 kg en 3 meses para sentirme con más energía..." style="width:100%;padding:16px 18px;border:1.5px solid var(--line);background:var(--paper);border-radius:var(--r-md);font-size:15px;color:var(--ink);font-family:var(--body);resize:none;"></textarea>
+          <div class="field">
+            <label class="field-label" for="goalDesc">Describe tu meta <span class="field-hint">(opcional)</span></label>
+            <div class="field-input-wrap">
+              <textarea id="goalDesc" formControlName="goalDescription" rows="3" placeholder="Ej. Quiero perder 8 kg en 3 meses para sentirme con más energía..." style="width:100%;padding:16px 18px;border:1.5px solid var(--line);background:var(--paper);border-radius:var(--r-md);font-size:15px;color:var(--ink);font-family:var(--body);resize:none;"></textarea>
+            </div>
           </div>
-        </div>
 
-        <div class="field" style="display:flex;align-items:flex-start;gap:12px;margin-top:20px;">
-          <input type="checkbox" id="acceptTerms" formControlName="acceptTerms" style="width:20px;height:20px;margin-top:2px;accent-color:var(--pine);">
-          <label for="acceptTerms" style="font-size:13px;color:var(--ink-light);cursor:pointer;">
-            Acepto los <strong style="color:var(--pine);">términos de servicio</strong> y el <strong style="color:var(--pine);">aviso de privacidad</strong>. Entiendo que este plan es informativo y no sustituye atención médica.
-          </label>
-        </div>
+          <div class="field" style="display:flex;align-items:flex-start;gap:12px;margin-top:20px;">
+            <input type="checkbox" id="acceptTerms" formControlName="acceptTerms" (change)="termsAccepted.set($any($event.target).checked)" style="width:20px;height:20px;margin-top:2px;accent-color:var(--pine);">
+            <label for="acceptTerms" style="font-size:13px;color:var(--ink-light);cursor:pointer;">
+              Acepto los <a href="#" (click)="$event.preventDefault(); showTermsModal.set(true)" style="color:var(--pine);text-decoration:underline;font-weight:600;">términos de servicio</a> y el <a href="#" (click)="$event.preventDefault(); showPrivacyModal.set(true)" style="color:var(--pine);text-decoration:underline;font-weight:600;">aviso de privacidad</a>. Entiendo que este plan es informativo y no sustituye atención médica.
+            </label>
+          </div>
+          @if (step() === STEPS.length - 2 && !termsAccepted()) {
+            <p style="font-size:12px;color:var(--ink-muted);margin-top:-2px;padding-left:32px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Debes aceptar los términos para continuar
+            </p>
+          }
+        </form>
       </div>
 
       <!-- STEP 8: Generating -->
@@ -333,13 +363,73 @@ const STEPS = [
           <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       } @else if (step() === STEPS.length - 2) {
-        <button class="btn-primary" (click)="finishOnboarding()" [disabled]="submitting()">
+        <button class="btn-primary" (click)="finishOnboarding()" [disabled]="!termsAccepted() || submitting()">
           @if (submitting()) { <span class="spinner"></span> }
           Comenzar mi viaje
           <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       }
     </div>
+
+    @if (showTermsModal()) {
+      <div class="modal-overlay" (click)="showTermsModal.set(false)">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2 class="modal-title">Términos de Servicio</h2>
+            <button class="modal-close" (click)="showTermsModal.set(false)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <h3>Aviso Médico Importante</h3>
+            <p><strong>NutriCasa no es un servicio médico ni nutricional profesional.</strong> Los planes alimenticios, recomendaciones y contenido generados por inteligencia artificial son puramente informativos y educativos. No constituyen consejo médico, diagnóstico ni tratamiento.</p>
+            <h3>Antes de comenzar una dieta cetogénica</h3>
+            <ul>
+              <li>Consulta con tu médico, especialmente si tienes diabetes, problemas renales, hepáticos, pancreáticos, cardíacos, tiroideos, antecedentes de trastornos alimenticios, embarazo o lactancia.</li>
+              <li>Informa a tu médico sobre cualquier medicamento que tomes.</li>
+              <li>Si experimentas mareos severos, dolor de pecho, dificultad para respirar o cualquier síntoma preocupante, suspende la dieta y busca atención médica inmediata.</li>
+            </ul>
+            <h3>Limitación de responsabilidad</h3>
+            <p>Al aceptar estos términos, reconoces que el uso de NutriCasa es bajo tu propia responsabilidad.</p>
+            <h3>Privacidad</h3>
+            <p>Tus datos médicos y biométricos se almacenan cifrados y nunca se comparten con terceros sin tu consentimiento explícito.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-primary" (click)="showTermsModal.set(false)">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (showPrivacyModal()) {
+      <div class="modal-overlay" (click)="showPrivacyModal.set(false)">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2 class="modal-title">Aviso de Privacidad</h2>
+            <button class="modal-close" (click)="showPrivacyModal.set(false)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>En NutriCasa nos tomamos en serio tu privacidad. Este aviso describe cómo recopilamos, usamos y protegemos tu información personal y médica.</p>
+            <h3>Datos que recopilamos</h3>
+            <ul>
+              <li>Datos de perfil: nombre, correo electrónico, fecha de nacimiento, género.</li>
+              <li>Datos biométricos: peso, altura, tipo de cuerpo, nivel de actividad.</li>
+              <li>Datos médicos: condiciones de salud, alergias, medicamentos.</li>
+              <li>Datos de uso: preferencias alimenticias, check-ins diarios, progreso.</li>
+            </ul>
+            <h3>Protección de datos</h3>
+            <p>Tus datos médicos y biométricos se almacenan <strong>cifrados</strong> y nunca se comparten con terceros sin tu consentimiento explícito.</p>
+            <h3>Tus derechos</h3>
+            <p>Conforme a la LFPDPPP, tienes derecho a Acceso, Rectificación, Cancelación y Oposición al uso de tus datos.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-primary" (click)="showPrivacyModal.set(false)">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    }
   </div>
   `,
   styles: [`
@@ -486,6 +576,12 @@ const STEPS = [
     }
     .disclaimer-box strong { display: block; margin-bottom: 4px; color: var(--warning); }
 
+    .field-input-wrap:has(input.ng-touched.ng-invalid) input,
+    .field-input-wrap:has(textarea.ng-touched.ng-invalid) textarea {
+      border-color: var(--coral-soft);
+      box-shadow: 0 0 0 3px rgba(232,121,100,0.10);
+    }
+
     .spinner {
       width: 18px; height: 18px;
       border: 2px solid rgba(255,255,255,0.3);
@@ -493,11 +589,73 @@ const STEPS = [
       animation: spin 0.6s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: flex-end;
+      justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-content {
+      background: var(--cream);
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+      width: 100%; max-width: 540px;
+      max-height: 85vh; overflow-y: auto;
+      display: flex; flex-direction: column;
+      animation: slideUp 0.3s var(--ease-out);
+    }
+    .modal-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 20px 22px 14px;
+      border-bottom: 1px solid var(--line);
+      position: sticky; top: 0;
+      background: var(--cream); z-index: 1;
+    }
+    .modal-title {
+      font-family: var(--display); font-size: 20px;
+      font-weight: 500; color: var(--ink);
+    }
+    .modal-close {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-light);
+    }
+    .modal-close:hover { background: var(--mint-soft); color: var(--pine); }
+    .modal-body {
+      padding: 18px 22px 12px;
+      flex: 1; overflow-y: auto;
+    }
+    .modal-body h3 {
+      font-family: var(--display); font-size: 17px;
+      font-weight: 500; color: var(--ink);
+      margin: 20px 0 8px;
+    }
+    .modal-body p {
+      font-size: 14px; line-height: 1.65;
+      color: var(--ink-soft); margin-bottom: 12px;
+    }
+    .modal-body ul {
+      padding-left: 18px; margin-bottom: 12px;
+    }
+    .modal-body li {
+      font-size: 14px; line-height: 1.65;
+      color: var(--ink-soft); margin-bottom: 4px;
+    }
+    .modal-footer {
+      padding: 12px 22px 24px;
+      background: var(--cream);
+    }
+    .modal-footer .btn-primary { width: 100%; justify-content: center; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   `]
 })
 export class OnboardingPage {
   private readonly fb = inject(FormBuilder);
   private readonly onboarding = inject(OnboardingService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   readonly STEPS = STEPS;
@@ -514,8 +672,8 @@ export class OnboardingPage {
   });
 
   readonly metricsForm = this.fb.group({
-    weightKg: [70, [Validators.required, Validators.min(30), Validators.max(300)]],
-    heightCm: [170, [Validators.required, Validators.min(100), Validators.max(250)]],
+    weightKg: [0, [Validators.required, Validators.min(1)]],
+    heightCm: [0, [Validators.required, Validators.min(1)]],
     goalWeightKg: [null as number | null],
   });
 
@@ -563,7 +721,7 @@ export class OnboardingPage {
     const base = gender === 'female' ? this.femaleBodyTypes : this.maleBodyTypes;
     return [
       ...base,
-      { value: 'average' as BodyType, label: 'No estoy seguro', desc: 'Déjalo en automático', icon: '❓', color: 'var(--cream-warm)' },
+      { value: 'notSure' as BodyType, label: 'No estoy seguro', desc: 'Déjalo en automático', icon: '❓', color: 'var(--cream-warm)' },
     ];
   });
 
@@ -613,6 +771,77 @@ export class OnboardingPage {
   private selectedConditions = new Set<string>();
   private selectedAllergies = new Set<string>();
 
+  readonly showTermsModal = signal(false);
+  readonly showPrivacyModal = signal(false);
+  readonly termsAccepted = signal(false);
+
+  private readonly STORAGE_KEY = 'nutricasa_onboarding';
+
+  ngOnInit() {
+    this.loadFromStorage();
+
+    const subs = [
+      this.basicForm.valueChanges.subscribe(() => this.saveToStorage()),
+      this.metricsForm.valueChanges.subscribe(() => this.saveToStorage()),
+      this.bodyTypeForm.valueChanges.subscribe(() => this.saveToStorage()),
+      this.activityForm.valueChanges.subscribe(() => this.saveToStorage()),
+      this.budgetForm.valueChanges.subscribe(() => this.saveToStorage()),
+      this.medicalForm.valueChanges.subscribe(() => this.saveToStorage()),
+      this.goalForm.valueChanges.subscribe(() => this.saveToStorage()),
+    ];
+  }
+
+  ngOnDestroy() {
+    this.saveToStorage();
+  }
+
+  private saveToStorage() {
+    const data = {
+      step: this.step(),
+      groupAction: this.groupAction(),
+      inviteCode: this.inviteCode(),
+      selectedConditions: [...this.selectedConditions],
+      selectedAllergies: [...this.selectedAllergies],
+      basicForm: this.basicForm.value,
+      metricsForm: this.metricsForm.value,
+      bodyTypeForm: this.bodyTypeForm.value,
+      activityForm: this.activityForm.value,
+      budgetForm: this.budgetForm.value,
+      medicalForm: this.medicalForm.value,
+      goalForm: this.goalForm.value,
+    };
+    try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data)); } catch {}
+  }
+
+  private loadFromStorage() {
+    let raw: string | null = null;
+    try { raw = localStorage.getItem(this.STORAGE_KEY); } catch {}
+    if (!raw) return;
+
+    let data: any;
+    try { data = JSON.parse(raw); } catch { return; }
+    if (!data) return;
+
+    this.step.set(typeof data.step === 'number' ? data.step : 0);
+    if (data.groupAction === 'create' || data.groupAction === 'join') this.groupAction.set(data.groupAction);
+    if (typeof data.inviteCode === 'string') this.inviteCode.set(data.inviteCode);
+
+    if (Array.isArray(data.selectedConditions)) {
+      this.selectedConditions = new Set(data.selectedConditions);
+    }
+    if (Array.isArray(data.selectedAllergies)) {
+      this.selectedAllergies = new Set(data.selectedAllergies);
+    }
+
+    if (data.basicForm) this.basicForm.patchValue(data.basicForm, { emitEvent: false });
+    if (data.metricsForm) this.metricsForm.patchValue(data.metricsForm, { emitEvent: false });
+    if (data.bodyTypeForm) this.bodyTypeForm.patchValue(data.bodyTypeForm, { emitEvent: false });
+    if (data.activityForm) this.activityForm.patchValue(data.activityForm, { emitEvent: false });
+    if (data.budgetForm) this.budgetForm.patchValue(data.budgetForm, { emitEvent: false });
+    if (data.medicalForm) this.medicalForm.patchValue(data.medicalForm, { emitEvent: false });
+    if (data.goalForm) this.goalForm.patchValue(data.goalForm, { emitEvent: false });
+  }
+
   isConditionSelected(value: string) { return this.selectedConditions.has(value); }
   isAllergySelected(value: string) { return this.selectedAllergies.has(value); }
 
@@ -627,10 +856,25 @@ export class OnboardingPage {
   }
 
   nextStep() {
-    if (this.step() < STEPS.length - 2) {
-      this.submitCurrentStep();
-      this.step.update(s => s + 1);
-      window.scrollTo(0, 0);
+    if (this.step() >= STEPS.length - 2) return;
+    if (!this.isStepValid()) return;
+    this.submitCurrentStep();
+    this.step.update(s => s + 1);
+    window.scrollTo(0, 0);
+  }
+
+  private isStepValid(): boolean {
+    switch (this.step()) {
+      case 0:
+        if (this.groupAction() === 'join' && this.inviteCode().trim().length === 0) return false;
+        return true;
+      case 1:
+        this.basicForm.markAllAsTouched();
+        return this.basicForm.valid;
+      case 2:
+        this.metricsForm.markAllAsTouched();
+        return this.metricsForm.valid;
+      default: return true;
     }
   }
 
@@ -690,7 +934,8 @@ export class OnboardingPage {
   }
 
   private submitBodyType() {
-    this.onboarding.completeStep4BodyType(this.bodyTypeForm.value as BodyTypeRequest).subscribe();
+    const raw = (this.bodyTypeForm.value.bodyType ?? 'slim') as string;
+    this.onboarding.completeStep4BodyType({ bodyType: (raw === 'notSure' ? 'average' : raw) as BodyType }).subscribe();
   }
 
   private submitActivity() {
@@ -699,7 +944,7 @@ export class OnboardingPage {
 
   private submitBudgetMode() {
     const mode = this.budgetForm.value.budgetMode!;
-    this.onboarding.completeStep5BudgetMode({ budgetModeId: this.mapBudgetModeId(mode) }).subscribe();
+    this.onboarding.completeStep5BudgetMode({ budgetModeCode: this.mapBudgetModeId(mode) }).subscribe();
   }
 
   private submitMedical() {
@@ -740,12 +985,15 @@ export class OnboardingPage {
       targetWeightKg: this.metricsForm.value.goalWeightKg ?? undefined,
     }).subscribe({
       next: () => {
-        this.submitting.set(false);
-        this.step.set(STEPS.length - 1);
-        setTimeout(() => {
-          this.planDone.set(true);
-          setTimeout(() => this.router.navigate(['/dashboard']), 2500);
-        }, 2000);
+        this.auth.loadProfile().subscribe(() => {
+          this.submitting.set(false);
+          this.step.set(STEPS.length - 1);
+          try { localStorage.removeItem(this.STORAGE_KEY); } catch {}
+          setTimeout(() => {
+            this.planDone.set(true);
+            setTimeout(() => this.router.navigate(['/dashboard']), 2500);
+          }, 2000);
+        });
       },
       error: () => {
         this.submitting.set(false);

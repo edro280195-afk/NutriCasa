@@ -18,30 +18,25 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/onboarding/onboarding.page').then(c => c.OnboardingPage),
   },
   {
-    path: 'dashboard',
+    path: '',
     canActivate: [authGuard, dashboardGuard],
-    loadComponent: () => import('./pages/dashboard/dashboard.page').then(c => c.DashboardPage),
+    loadComponent: () => import('./layouts/main-layout').then(c => c.MainLayout),
+    children: [
+      { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.page').then(c => c.DashboardPage) },
+      { path: 'plan', loadComponent: () => import('./pages/plan/plan.page').then(c => c.PlanPage) },
+      { path: 'family', loadComponent: () => import('./pages/family/family.page').then(c => c.FamilyPage) },
+      { path: 'progress', loadComponent: () => import('./pages/progress/progress.page').then(c => c.ProgressPage) },
+      { path: 'profile', loadComponent: () => import('./pages/profile/profile.page').then(c => c.ProfilePage) },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
   },
   {
-    path: 'plan',
-    canActivate: [authGuard, dashboardGuard],
-    loadComponent: () => import('./pages/plan/plan.page').then(c => c.PlanPage),
+    path: 'legal',
+    children: [
+      { path: 'terms', loadComponent: () => import('./pages/legal/terms.page').then(c => c.TermsPage) },
+      { path: 'privacy', loadComponent: () => import('./pages/legal/privacy.page').then(c => c.PrivacyPage) },
+      { path: '', redirectTo: 'terms', pathMatch: 'full' },
+    ],
   },
-  {
-    path: 'family',
-    canActivate: [authGuard, dashboardGuard],
-    loadComponent: () => import('./pages/family/family.page').then(c => c.FamilyPage),
-  },
-  {
-    path: 'progress',
-    canActivate: [authGuard, dashboardGuard],
-    loadComponent: () => import('./pages/progress/progress.page').then(c => c.ProgressPage),
-  },
-  {
-    path: 'profile',
-    canActivate: [authGuard, dashboardGuard],
-    loadComponent: () => import('./pages/profile/profile.page').then(c => c.ProfilePage),
-  },
-  { path: '', redirectTo: 'auth', pathMatch: 'full' },
   { path: '**', redirectTo: 'auth' },
 ];
