@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KetoGroup AI · Onboarding Wizard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+
+<style>
+:root {
+  --pine: #0F3D2E;
+  --pine-soft: #1B5C46;
+  --pine-darker: #0A2A20;
+  --mint: #5BC096;
+  --mint-light: #B5E2CB;
+  --mint-soft: #E0F2E8;
+  --lake: #5BA3D0;
+  --lake-light: #B8DCEC;
+  --coral: #E8866B;
+  --coral-soft: #F5C7B8;
+  --coral-bg: #FBE6DD;
+  --cream: #F8F4EC;
+  --cream-warm: #F1EAD8;
+  --ink: #0F2419;
+  --ink-soft: #2D3E33;
+  --ink-light: #5C6B5F;
+  --ink-muted: #8A9590;
+  --line: #E0DACD;
+  --paper: #FFFFFF;
+  --warning: #C28E3D;
+  --warning-bg: #FBF1DD;
+  --shadow-sm: 0 1px 2px rgba(15,36,25,0.04), 0 2px 4px rgba(15,36,25,0.03);
+  --shadow-md: 0 4px 8px rgba(15,36,25,0.05), 0 8px 24px rgba(15,36,25,0.06);
+  --shadow-lg: 0 8px 16px rgba(15,36,25,0.07), 0 16px 48px rgba(15,36,25,0.10);
+  --shadow-pine: 0 8px 32px rgba(15,61,46,0.18);
+  --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-xl: 32px; --r-pill: 999px;
+  --display: 'Fraunces', Georgia, serif;
+  --body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.22,0.61,0.36,1);
+  --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+html, body { font-family: var(--body); background: var(--cream); color: var(--ink); font-size: 16px; line-height: 1.5; min-height: 100vh; overflow-x: hidden; }
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none; opacity: 0.35; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.06 0 0 0 0 0.14 0 0 0 0 0.10 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ============================================================
+   SHELL DEL WIZARD
+   ============================================================ */
+.shell {
+  position: relative; z-index: 1;
+  max-width: 540px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  padding: 0;
+}
+
+/* Header con stepper */
+.wiz-header {
+  position: sticky; top: 0;
+  background: var(--cream);
+  z-index: 10;
+  padding: var(--s-4) var(--s-5);
+  padding: 18px 22px 14px;
+}
+
+.wiz-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.wiz-back {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--ink-light); font-size: 13px; font-weight: 600;
+  padding: 6px 10px; border-radius: var(--r-pill);
+  transition: background 0.2s var(--ease-out);
+}
+.wiz-back:hover { background: var(--mint-soft); color: var(--pine); }
+.wiz-back.invisible { visibility: hidden; }
+.wiz-step-counter {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.wiz-step-counter strong { color: var(--pine); }
+.wiz-skip {
+  font-size: 13px; font-weight: 600;
+  color: var(--ink-light);
+  padding: 6px 10px; border-radius: var(--r-pill);
+}
+.wiz-skip:hover { color: var(--pine); }
+.wiz-skip.invisible { visibility: hidden; }
+
+/* Progress bar */
+.wiz-progress {
+  height: 4px; background: var(--line);
+  border-radius: 4px; overflow: hidden;
+  margin-bottom: 12px;
+}
+.wiz-progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--mint), var(--pine));
+  border-radius: 4px;
+  transition: width 0.6s var(--ease-out);
+}
+
+/* Breadcrumb contextual */
+.wiz-breadcrumb {
+  display: flex; gap: 6px; flex-wrap: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  overflow: hidden;
+}
+.wiz-breadcrumb span {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 0;
+  white-space: nowrap;
+  transition: color 0.3s var(--ease-out);
+}
+.wiz-breadcrumb span:not(:last-child)::after {
+  content: '·';
+  color: var(--ink-muted);
+  margin-left: 6px;
+}
+.wiz-breadcrumb span.current { color: var(--pine); }
+.wiz-breadcrumb span.done { color: var(--mint); }
+
+/* Container de los pasos */
+.wiz-stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.wiz-step {
+  display: none;
+  padding: 12px 22px 32px;
+  animation: stepIn 0.5s var(--ease-out);
+}
+.wiz-step.active { display: block; }
+@keyframes stepIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Headers de paso */
+.step-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-bottom: 10px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.step-eyebrow::before {
+  content: '';
+  width: 22px; height: 1.5px;
+  background: var(--mint);
+}
+.step-title {
+  font-family: var(--display);
+  font-size: clamp(28px, 5vw, 36px);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.step-title .italic { font-style: italic; color: var(--pine); }
+.step-subtitle {
+  font-size: 15px;
+  color: var(--ink-light);
+  margin-bottom: 28px;
+  line-height: 1.55;
+  max-width: 460px;
+}
+
+/* Footer fijo con CTAs */
+.wiz-footer {
+  position: sticky; bottom: 0;
+  padding: 18px 22px 24px;
+  background: linear-gradient(to top, var(--cream) 70%, transparent);
+  z-index: 10;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 17px 24px;
+  background: var(--pine);
+  color: var(--cream);
+  border-radius: var(--r-md);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.25s var(--ease-out);
+  position: relative; overflow: hidden;
+}
+.btn-primary::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(91,192,150,0.25) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s var(--ease-out);
+}
+.btn-primary:hover { background: var(--pine-darker); transform: translateY(-1px); }
+.btn-primary:hover::before { transform: translateX(100%); }
+.btn-primary:disabled {
+  background: var(--line); color: var(--ink-muted);
+  cursor: not-allowed;
+}
+.btn-primary svg { transition: transform 0.25s var(--ease-out); }
+.btn-primary:hover:not(:disabled) svg.arrow { transform: translateX(3px); }
+
+.btn-secondary {
+  width: 100%;
+  padding: 15px 24px;
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: all 0.2s var(--ease-out);
+  margin-top: 10px;
+}
+.btn-secondary:hover { border-color: var(--pine); background: var(--paper); }
+
+.btn-text {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; color: var(--pine);
+  padding: 8px 12px; border-radius: var(--r-pill);
+  transition: background 0.2s;
+}
+.btn-text:hover { background: var(--mint-soft); }
+
+/* ============================================================
+   PASO 1: BIENVENIDA
+   ============================================================ */
+.welcome-hero {
+  text-align: center;
+  padding-top: 8px;
+}
+.lottie-welcome {
+  width: 240px; height: 240px;
+  margin: 0 auto 20px;
+}
+.welcome-title {
+  font-family: var(--display);
+  font-size: clamp(32px, 6vw, 42px);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.welcome-title .italic { font-style: italic; color: var(--pine); }
+.welcome-sub {
+  font-size: 16px; color: var(--ink-light);
+  max-width: 380px; margin: 0 auto 36px;
+  line-height: 1.55;
+}
+
+.choice-cards {
+  display: flex; flex-direction: column; gap: 12px;
+  max-width: 460px; margin: 0 auto;
+}
+.choice {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  display: flex; align-items: center; gap: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  position: relative;
+}
+.choice:hover { border-color: var(--mint); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.choice.selected {
+  border-color: var(--pine);
+  background: var(--mint-soft);
+  box-shadow: 0 0 0 3px rgba(15,61,46,0.08);
+}
+.choice-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.choice-icon.create { background: var(--mint-soft); color: var(--pine); }
+.choice-icon.join { background: var(--lake-light); color: var(--lake); }
+.choice-text { flex: 1; }
+.choice-title {
+  font-family: var(--display);
+  font-size: 18px; font-weight: 500;
+  color: var(--ink); margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+.choice-desc {
+  font-size: 13px; color: var(--ink-light);
+  line-height: 1.45;
+}
+.choice-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s var(--ease-out);
+}
+.choice.selected .choice-check {
+  background: var(--pine);
+  border-color: var(--pine);
+}
+.choice-check svg { opacity: 0; transition: opacity 0.2s; }
+.choice.selected .choice-check svg { opacity: 1; }
+
+.invite-input-wrap {
+  margin-top: 16px;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px;
+  max-width: 460px; margin-left: auto; margin-right: auto;
+}
+.invite-input-wrap input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--pine);
+  text-transform: uppercase;
+}
+.invite-input-wrap input::placeholder { color: var(--ink-muted); letter-spacing: 0.04em; text-transform: none; font-weight: 500; }
+.invite-pill {
+  font-size: 11px; font-weight: 700;
+  color: var(--mint); letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 4px 10px; background: var(--mint-soft); border-radius: var(--r-pill);
+}
+
+/* ============================================================
+   PASO 2: DATOS BÁSICOS
+   ============================================================ */
+.field {
+  margin-bottom: 18px;
+}
+.field-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px; font-weight: 600;
+  color: var(--ink); margin-bottom: 8px;
+  letter-spacing: 0.01em;
+}
+.field-hint {
+  font-size: 12px; color: var(--ink-muted);
+  font-weight: 500;
+}
+.field-input-wrap {
+  position: relative;
+}
+.field-input-wrap input,
+.field-input-wrap select {
+  width: 100%;
+  padding: 16px 18px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--r-md);
+  font-size: 15px;
+  color: var(--ink);
+  transition: all 0.2s var(--ease-out);
+  font-family: var(--body);
+}
+.field-input-wrap input::placeholder { color: var(--ink-muted); }
+.field-input-wrap input:focus,
+.field-input-wrap select:focus {
+  outline: none;
+  border-color: var(--pine);
+  box-shadow: 0 0 0 4px rgba(15,61,46,0.08);
+}
+.field-error {
+  font-size: 12px; color: var(--coral);
+  margin-top: 6px;
+  display: flex; align-items: center; gap: 4px;
+}
+
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Foto de perfil */
+.photo-uploader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28px;
+  gap: 14px;
+}
+.photo-circle {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: var(--mint-soft);
+  border: 3px dashed var(--mint);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease-spring);
+}
+.photo-circle:hover { transform: scale(1.03); }
+.photo-circle svg { color: var(--pine); }
+.photo-circle.has-photo { border-style: solid; }
+.photo-actions {
+  display: flex; gap: 10px;
+}
+.photo-action {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-soft);
+  transition: all 0.2s var(--ease-out);
+}
+.photo-action:hover { border-color: var(--pine); color: var(--pine); }
+
+/* Selector de género (chips) */
+.chip-group {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.chip {
+  padding: 11px 18px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+}
+.chip:hover { border-color: var(--pine); }
+.chip.selected {
+  border-color: var(--pine);
+  background: var(--pine);
+  color: var(--cream);
+}
+
+/* ============================================================
+   PASO 3: MÉTRICAS
+   ============================================================ */
+.metric-card {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s var(--ease-out);
+}
+.metric-card:focus-within { border-color: var(--pine); }
+.metric-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 14px;
+}
+.metric-name {
+  font-family: var(--display);
+  font-size: 17px; font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.metric-unit {
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-muted); letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.metric-input-row {
+  display: flex; align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.metric-input-row input {
+  flex: 1;
+  border: none; outline: none; background: none;
+  font-family: var(--display);
+  font-size: 42px; font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--pine);
+  width: 100%;
+}
+.metric-input-row input::placeholder { color: var(--ink-muted); opacity: 0.4; }
+.metric-input-row .unit-hint {
+  font-size: 14px; font-weight: 600;
+  color: var(--ink-muted);
+}
+
+/* Slider visual */
+.metric-slider {
+  position: relative;
+  height: 6px;
+  background: var(--line);
+  border-radius: 4px;
+  margin-top: 8px;
+}
+.metric-slider-fill {
+  position: absolute; top: 0; left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--mint), var(--pine));
+  border-radius: 4px;
+  transition: width 0.4s var(--ease-out);
+}
+.metric-slider-thumb {
+  position: absolute; top: 50%;
+  width: 18px; height: 18px;
+  background: var(--paper);
+  border: 3px solid var(--pine);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: var(--shadow-sm);
+  transition: left 0.4s var(--ease-out);
+}
+.metric-slider-labels {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--ink-muted);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.metric-info-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--mint-soft);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--pine);
+  font-weight: 500;
+}
+
+/* ============================================================
+   PASO 4: COMPLEXIÓN VISUAL
+   ============================================================ */
+.silhouettes {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+@media (max-width: 480px) {
+  .silhouettes { gap: 4px; }
+}
+.sil {
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 14px 6px 10px;
+  cursor: pointer;
+  transition: all 0.25s var(--ease-out);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.sil:hover { transform: translateY(-3px); border-color: var(--mint); }
+.sil.selected {
+  border-color: var(--pine);
+  background: var(--mint-soft);
+  box-shadow: 0 0 0 3px rgba(15,61,46,0.08);
+  transform: translateY(-3px);
+}
+.sil svg { width: 100%; height: auto; max-width: 60px; }
+.sil-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-light);
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sil.selected .sil-label { color: var(--pine); }
+
+.gender-toggle {
+  display: flex; gap: 6px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 4px;
+  width: fit-content;
+  margin: 0 auto 20px;
+}
+.gender-toggle button {
+  padding: 8px 18px;
+  border-radius: var(--r-pill);
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-light);
+  transition: all 0.2s var(--ease-out);
+}
+.gender-toggle button.active {
+  background: var(--pine);
+  color: var(--cream);
+}
+
+.sil-help {
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-light);
+  padding: 14px 18px;
+  background: var(--mint-soft);
+  border-radius: var(--r-md);
+  margin-bottom: 12px;
+}
+
+/* ============================================================
+   PASO 5: NIVEL DE ACTIVIDAD
+   ============================================================ */
+.activity-cards {
+  display: flex; flex-direction: column;
+  gap: 10px;
+}
+.activity {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  text-align: left;
+}
+.activity:hover { border-color: var(--mint); transform: translateX(2px); }
+.activity.selected {
+  border-color: var(--pine);
+  background: var(--mint-soft);
+  box-shadow: 0 0 0 3px rgba(15,61,46,0.08);
+}
+.activity-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--r-md);
+  background: var(--cream-warm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--pine);
+  flex-shrink: 0;
+}
+.activity.selected .activity-icon { background: var(--paper); }
+.activity-info { flex: 1; min-width: 0; }
+.activity-title {
+  font-family: var(--display);
+  font-size: 16px; font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  margin-bottom: 2px;
+}
+.activity-desc {
+  font-size: 12px;
+  color: var(--ink-light);
+  line-height: 1.4;
+}
+.activity-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.activity.selected .activity-check {
+  background: var(--pine); border-color: var(--pine);
+}
+.activity-check svg { opacity: 0; transition: opacity 0.2s; }
+.activity.selected .activity-check svg { opacity: 1; }
+
+/* ============================================================
+   PASO 6: PERFIL MÉDICO
+   ============================================================ */
+.med-section {
+  margin-bottom: 24px;
+}
+.med-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 12px;
+  letter-spacing: -0.005em;
+  display: flex; align-items: center; gap: 6px;
+}
+.med-section-title .info-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--ink-muted);
+  color: var(--paper);
+  font-size: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  cursor: help;
+}
+
+.med-checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+@media (max-width: 480px) {
+  .med-checks { grid-template-columns: 1fr; }
+}
+.med-check {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.med-check:hover { border-color: var(--ink-light); }
+.med-check.checked {
+  border-color: var(--coral);
+  background: var(--coral-bg);
+  color: var(--ink);
+}
+.med-check.checked.warning-only {
+  border-color: var(--warning);
+  background: var(--warning-bg);
+}
+.med-check input { display: none; }
+.med-checkbox {
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper);
+}
+.med-check.checked .med-checkbox {
+  background: var(--coral); border-color: var(--coral);
+}
+.med-check.checked.warning-only .med-checkbox {
+  background: var(--warning); border-color: var(--warning);
+}
+.med-checkbox svg { opacity: 0; transition: opacity 0.15s; color: var(--paper); }
+.med-check.checked .med-checkbox svg { opacity: 1; }
+
+.tag-input {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  align-items: center;
+  min-height: 50px;
+  transition: border-color 0.2s var(--ease-out);
+}
+.tag-input:focus-within { border-color: var(--pine); }
+.tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px;
+  background: var(--mint-soft);
+  color: var(--pine);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+}
+.tag-remove {
+  background: none; border: none; cursor: pointer;
+  color: var(--pine); opacity: 0.6;
+  padding: 0; line-height: 1;
+}
+.tag-remove:hover { opacity: 1; }
+.tag-input input {
+  flex: 1; min-width: 100px;
+  border: none; outline: none; background: none;
+  font-size: 13px;
+  padding: 4px 6px;
+}
+
+.experience-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.exp-card {
+  padding: 14px 10px;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+}
+.exp-card:hover { border-color: var(--mint); }
+.exp-card.selected { border-color: var(--pine); background: var(--mint-soft); }
+.exp-emoji { font-size: 24px; margin-bottom: 4px; }
+.exp-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+.exp-desc { font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
+
+/* Banner crítico cuando se marca flag bloqueante */
+.med-warning-banner {
+  margin-top: 18px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--coral-bg), var(--warning-bg));
+  border-left: 4px solid var(--coral);
+  border-radius: var(--r-md);
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.med-warning-banner.hidden { display: none; }
+.med-warning-icon {
+  width: 32px; height: 32px;
+  background: var(--coral);
+  color: var(--paper);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.med-warning-content {
+  flex: 1;
+}
+.med-warning-title {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 4px;
+  letter-spacing: -0.005em;
+}
+.med-warning-text {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   PASO 6.5: BIFURCACIÓN OVERRIDE
+   ============================================================ */
+.override-card {
+  background: var(--paper);
+  border-radius: var(--r-xl);
+  padding: 24px;
+  margin-bottom: 16px;
+  border: 1.5px solid var(--line);
+}
+.override-card.danger {
+  border-left: 4px solid var(--coral);
+  background: linear-gradient(135deg, #FFFFFF, var(--coral-bg) 200%);
+}
+.override-card.warning {
+  border-left: 4px solid var(--warning);
+  background: linear-gradient(135deg, #FFFFFF, var(--warning-bg) 200%);
+}
+.override-icon-wrap {
+  width: 56px; height: 56px;
+  background: var(--coral-bg);
+  color: var(--coral);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 14px;
+}
+.override-title {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+.override-text {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.override-list {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 16px;
+}
+.override-list li {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.override-list li::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--coral);
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+
+.override-checkbox-wrap {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px;
+  background: var(--cream-warm);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  margin-bottom: 14px;
+}
+.override-checkbox-wrap input { display: none; }
+.override-cb-visual {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--ink-muted);
+  background: var(--paper);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px;
+  transition: all 0.2s var(--ease-out);
+}
+.override-checkbox-wrap input:checked + .override-cb-visual {
+  background: var(--pine);
+  border-color: var(--pine);
+}
+.override-cb-visual svg { opacity: 0; color: var(--paper); }
+.override-checkbox-wrap input:checked + .override-cb-visual svg { opacity: 1; }
+.override-cb-text {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.password-confirm {
+  margin-top: 14px;
+}
+
+/* ============================================================
+   PASO 7: DISCLAIMER + META
+   ============================================================ */
+.goal-types {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+@media (max-width: 480px) {
+  .goal-types { grid-template-columns: 1fr; }
+}
+.goal-card {
+  padding: 16px;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  text-align: left;
+}
+.goal-card:hover { border-color: var(--mint); }
+.goal-card.selected {
+  border-color: var(--pine);
+  background: var(--mint-soft);
+}
+.goal-icon {
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: var(--mint-soft);
+  color: var(--pine);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8px;
+}
+.goal-card.selected .goal-icon { background: var(--paper); }
+.goal-name {
+  font-family: var(--display);
+  font-size: 15px; font-weight: 500;
+  color: var(--ink); margin-bottom: 2px;
+}
+.goal-desc {
+  font-size: 11px; color: var(--ink-light);
+  line-height: 1.4;
+}
+
+.motivation-textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  font-size: 14px;
+  color: var(--ink);
+  font-family: var(--body);
+  resize: none;
+  min-height: 90px;
+  transition: border-color 0.2s var(--ease-out);
+}
+.motivation-textarea:focus { outline: none; border-color: var(--pine); }
+.char-counter {
+  text-align: right;
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+.disclaimer-box {
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  margin-bottom: 16px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.disclaimer-box h4 {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pine);
+  margin-bottom: 8px;
+  margin-top: 12px;
+}
+.disclaimer-box h4:first-child { margin-top: 0; }
+.disclaimer-box p {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+.disclaimer-box ul {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  padding-left: 16px;
+  margin-bottom: 8px;
+}
+
+.accept-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px;
+  background: var(--mint-soft);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.accept-row input { display: none; }
+.accept-cb {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--pine);
+  background: var(--paper);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px;
+  transition: all 0.2s var(--ease-out);
+}
+.accept-row input:checked + .accept-cb {
+  background: var(--pine);
+}
+.accept-cb svg { opacity: 0; color: var(--cream); }
+.accept-row input:checked + .accept-cb svg { opacity: 1; }
+.accept-text {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+/* ============================================================
+   PASO 8: GENERANDO PLAN
+   ============================================================ */
+.generating {
+  text-align: center;
+  padding: 40px 0;
+  display: flex; flex-direction: column;
+  align-items: center;
+}
+.lottie-cooking {
+  width: 280px; height: 280px;
+  margin-bottom: 20px;
+}
+.gen-title {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  margin-bottom: 12px;
+  line-height: 1.15;
+}
+.gen-title .italic { font-style: italic; color: var(--pine); }
+.gen-sub {
+  font-size: 14px;
+  color: var(--ink-light);
+  max-width: 320px;
+  line-height: 1.55;
+  margin-bottom: 36px;
+}
+
+.gen-steps {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+}
+.gen-step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+  transition: all 0.4s var(--ease-out);
+  font-size: 13px;
+  color: var(--ink-light);
+  text-align: left;
+}
+.gen-step.active {
+  border-color: var(--mint);
+  background: var(--mint-soft);
+  color: var(--pine);
+  font-weight: 600;
+}
+.gen-step.done {
+  color: var(--mint);
+  text-decoration: line-through;
+  text-decoration-color: rgba(91,192,150,0.4);
+  opacity: 0.7;
+}
+.gen-step-bullet {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.gen-step.active .gen-step-bullet {
+  border-color: var(--mint);
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+.gen-step.done .gen-step-bullet {
+  background: var(--mint); border-color: var(--mint);
+}
+.gen-step.done .gen-step-bullet svg { opacity: 1; }
+.gen-step.active .gen-step-bullet svg,
+.gen-step:not(.done):not(.active) .gen-step-bullet svg { opacity: 0; }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.gen-tip {
+  margin-top: 28px;
+  padding: 14px 18px;
+  background: var(--cream-warm);
+  border-radius: var(--r-md);
+  text-align: left;
+  display: flex; gap: 12px; align-items: flex-start;
+  max-width: 380px;
+  width: 100%;
+  margin-left: auto; margin-right: auto;
+}
+.gen-tip-icon {
+  width: 28px; height: 28px;
+  background: var(--mint);
+  color: var(--paper);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-style: italic;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 600;
+}
+.gen-tip-content {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.gen-tip-content strong { color: var(--pine); }
+
+/* ============================================================
+   FOOTER GLOBAL DE NAVEGACIÓN MOCKUP
+   ============================================================ */
+.mockup-footer {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: var(--pine);
+  color: var(--cream);
+  padding: 6px 8px;
+  border-radius: var(--r-pill);
+  display: flex; gap: 4px;
+  box-shadow: var(--shadow-pine);
+  font-size: 12px;
+}
+.mockup-footer button {
+  color: var(--cream);
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.mockup-footer button.active {
+  background: var(--mint);
+  color: var(--pine-darker);
+}
+.mockup-footer button:hover:not(.active) {
+  background: var(--pine-soft);
+}
+
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- HEADER -->
+  <div class="wiz-header">
+    <div class="wiz-top">
+      <button class="wiz-back" id="btnBack" onclick="goPrev()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Atrás
+      </button>
+      <div class="wiz-step-counter">Paso <strong id="stepCurrent">1</strong> de <span id="stepTotal">7</span></div>
+      <button class="wiz-skip" id="btnSkip">Salir</button>
+    </div>
+    <div class="wiz-progress">
+      <div class="wiz-progress-fill" id="progressFill" style="width: 14%"></div>
+    </div>
+    <div class="wiz-breadcrumb" id="breadcrumb">
+      <span class="current">Tú</span>
+      <span>Cuerpo</span>
+      <span>Salud</span>
+      <span>Meta</span>
+    </div>
+  </div>
+
+  <!-- STAGE -->
+  <div class="wiz-stage">
+
+    <!-- ============ PASO 1: BIENVENIDA ============ -->
+    <div class="wiz-step active" data-step="1">
+      <div class="welcome-hero">
+        <div class="lottie-welcome" id="lottieWelcome"></div>
+        <h1 class="welcome-title">
+          Bienvenido. Vamos a <span class="italic">conocerte.</span>
+        </h1>
+        <p class="welcome-sub">
+          En 7 pasos breves, configuramos tu reto y el de tu familia.
+          Te conocemos para crear el plan exacto para ti.
+        </p>
+
+        <div class="choice-cards">
+          <button class="choice selected" id="choiceCreate" onclick="selectChoice('create')">
+            <div class="choice-icon create">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+              </svg>
+            </div>
+            <div class="choice-text">
+              <div class="choice-title">Crear un grupo nuevo</div>
+              <div class="choice-desc">Inicia el reto familiar e invita a los demás con un código.</div>
+            </div>
+            <div class="choice-check">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+          </button>
+
+          <button class="choice" id="choiceJoin" onclick="selectChoice('join')">
+            <div class="choice-icon join">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/>
+                <polyline points="17 11 19 13 23 9"/>
+              </svg>
+            </div>
+            <div class="choice-text">
+              <div class="choice-title">Unirme con un código</div>
+              <div class="choice-desc">Tu familia ya empezó. Te dieron un código para entrar.</div>
+            </div>
+            <div class="choice-check">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+          </button>
+        </div>
+
+        <div class="invite-input-wrap" id="inviteWrap" style="display:none;">
+          <div class="invite-pill">Código</div>
+          <input type="text" placeholder="ej. FAM-PEREZ-2026" maxlength="20">
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PASO 2: DATOS BÁSICOS ============ -->
+    <div class="wiz-step" data-step="2">
+      <div class="step-eyebrow">Tus datos</div>
+      <h2 class="step-title">¿Cómo te <span class="italic">presentamos?</span></h2>
+      <p class="step-subtitle">Lo básico. Esto nos ayuda a personalizar tu experiencia y a que tu familia te identifique.</p>
+
+      <!-- Foto -->
+      <div class="photo-uploader">
+        <div class="photo-circle">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </div>
+        <div class="photo-actions">
+          <button class="photo-action">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            Cámara
+          </button>
+          <button class="photo-action">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            Galería
+          </button>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">
+          <span>Nombre completo</span>
+          <span class="field-hint">Visible a tu familia</span>
+        </div>
+        <div class="field-input-wrap">
+          <input type="text" placeholder="Eduardo Pérez Martínez" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">
+          <span>Fecha de nacimiento</span>
+          <span class="field-hint">Debes tener +18</span>
+        </div>
+        <div class="row-2">
+          <div class="field-input-wrap">
+            <select><option>Día</option><option>1</option><option>2</option><option>15</option></select>
+          </div>
+          <div class="field-input-wrap">
+            <select><option>Mes</option><option>Enero</option><option>Mayo</option></select>
+          </div>
+        </div>
+        <div class="field-input-wrap" style="margin-top: 8px;">
+          <input type="number" placeholder="Año, ej. 1990" min="1900" max="2008">
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">
+          <span>¿Cómo te identificas?</span>
+          <span class="field-hint">Para calcular tu metabolismo</span>
+        </div>
+        <div class="chip-group">
+          <button class="chip selected">Masculino</button>
+          <button class="chip">Femenino</button>
+          <button class="chip">No binario</button>
+          <button class="chip">Prefiero no decir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PASO 3: MÉTRICAS ============ -->
+    <div class="wiz-step" data-step="3">
+      <div class="step-eyebrow">Tu cuerpo hoy</div>
+      <h2 class="step-title">¿De dónde <span class="italic">partimos?</span></h2>
+      <p class="step-subtitle">Estas son tus medidas iniciales. Las usaremos para calcular tu plan y mostrar tu progreso.</p>
+
+      <div class="metric-card">
+        <div class="metric-head">
+          <div class="metric-name">Estatura</div>
+          <div class="metric-unit">cm</div>
+        </div>
+        <div class="metric-input-row">
+          <input type="number" value="175" min="50" max="250">
+          <span class="unit-hint">centímetros</span>
+        </div>
+        <div class="metric-slider">
+          <div class="metric-slider-fill" style="width: 56%"></div>
+          <div class="metric-slider-thumb" style="left: 56%"></div>
+        </div>
+        <div class="metric-slider-labels">
+          <span>140 cm</span><span>200 cm</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-head">
+          <div class="metric-name">Peso actual</div>
+          <div class="metric-unit">kg</div>
+        </div>
+        <div class="metric-input-row">
+          <input type="number" value="92" min="20" max="300" step="0.1">
+          <span class="unit-hint">kilogramos</span>
+        </div>
+        <div class="metric-slider">
+          <div class="metric-slider-fill" style="width: 60%"></div>
+          <div class="metric-slider-thumb" style="left: 60%"></div>
+        </div>
+        <div class="metric-slider-labels">
+          <span>40 kg</span><span>140 kg</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-head">
+          <div class="metric-name">Peso meta</div>
+          <div class="metric-unit">kg</div>
+        </div>
+        <div class="metric-input-row">
+          <input type="number" value="78" min="20" max="300" step="0.1">
+          <span class="unit-hint">a dónde quieres llegar</span>
+        </div>
+        <div class="metric-info-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Bajar 14 kg en aprox. 14 semanas a un ritmo saludable
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PASO 4: COMPLEXIÓN ============ -->
+    <div class="wiz-step" data-step="4">
+      <div class="step-eyebrow">Complexión visual</div>
+      <h2 class="step-title">¿Cuál se parece <span class="italic">más a ti hoy?</span></h2>
+      <p class="step-subtitle">Toca la silueta más cercana. No buscamos exactitud, solo una estimación complementaria.</p>
+
+      <div class="gender-toggle">
+        <button class="active">Masculino</button>
+        <button>Femenino</button>
+      </div>
+
+      <div class="silhouettes">
+        <button class="sil" onclick="selectSil(this)">
+          <svg viewBox="0 0 60 120">
+            <ellipse cx="30" cy="14" rx="9" ry="11" fill="none" stroke="#0F3D2E" stroke-width="2"/>
+            <path d="M 22 26 Q 22 32 24 36 L 22 50 L 24 70 L 22 90 L 24 112 M 38 26 Q 38 32 36 36 L 38 50 L 36 70 L 38 90 L 36 112 M 24 36 L 36 36 M 22 50 L 38 50 M 24 70 L 36 70" fill="none" stroke="#0F3D2E" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="sil-label">Delgado</span>
+        </button>
+
+        <button class="sil" onclick="selectSil(this)">
+          <svg viewBox="0 0 60 120">
+            <ellipse cx="30" cy="14" rx="10" ry="11.5" fill="none" stroke="#0F3D2E" stroke-width="2"/>
+            <path d="M 21 26 Q 21 33 23 38 L 21 53 L 23 73 L 21 92 L 23 112 M 39 26 Q 39 33 37 38 L 39 53 L 37 73 L 39 92 L 37 112 M 23 38 L 37 38 M 21 53 L 39 53 M 23 73 L 37 73" fill="none" stroke="#0F3D2E" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="sil-label">Promedio</span>
+        </button>
+
+        <button class="sil selected" onclick="selectSil(this)">
+          <svg viewBox="0 0 60 120">
+            <ellipse cx="30" cy="14" rx="10.5" ry="12" fill="none" stroke="#0F3D2E" stroke-width="2"/>
+            <path d="M 19 26 Q 18 35 22 42 L 19 56 L 22 76 L 19 94 L 22 112 M 41 26 Q 42 35 38 42 L 41 56 L 38 76 L 41 94 L 38 112 M 22 42 L 38 42 M 19 56 L 41 56 M 22 76 L 38 76" fill="none" stroke="#0F3D2E" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="sil-label">Atlético</span>
+        </button>
+
+        <button class="sil" onclick="selectSil(this)">
+          <svg viewBox="0 0 60 120">
+            <ellipse cx="30" cy="14" rx="11.5" ry="12" fill="none" stroke="#0F3D2E" stroke-width="2"/>
+            <path d="M 17 26 Q 14 38 22 46 L 17 60 L 22 80 L 17 96 L 22 112 M 43 26 Q 46 38 38 46 L 43 60 L 38 80 L 43 96 L 38 112 M 22 46 L 38 46 M 17 60 L 43 60 M 22 80 L 38 80" fill="none" stroke="#0F3D2E" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="sil-label">Robusto</span>
+        </button>
+
+        <button class="sil" onclick="selectSil(this)">
+          <svg viewBox="0 0 60 120">
+            <ellipse cx="30" cy="15" rx="12" ry="12.5" fill="none" stroke="#0F3D2E" stroke-width="2"/>
+            <path d="M 15 28 Q 10 42 22 50 L 15 64 L 22 84 L 15 98 L 22 112 M 45 28 Q 50 42 38 50 L 45 64 L 38 84 L 45 98 L 38 112 M 22 50 L 38 50 M 15 64 L 45 64 M 22 84 L 38 84" fill="none" stroke="#0F3D2E" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="sil-label">Plus</span>
+        </button>
+      </div>
+
+      <div class="sil-help">
+        <strong>Atlético</strong> seleccionado · Esto se combina con tu peso real para estimar % de grasa corporal
+      </div>
+    </div>
+
+    <!-- ============ PASO 5: ACTIVIDAD ============ -->
+    <div class="wiz-step" data-step="5">
+      <div class="step-eyebrow">Tu día a día</div>
+      <h2 class="step-title">¿Cuánto te <span class="italic">mueves?</span></h2>
+      <p class="step-subtitle">Esto es clave para calcular cuántas calorías quemas al día. Sé honesto, no hay respuesta correcta.</p>
+
+      <div class="activity-cards">
+        <button class="activity">
+          <div class="activity-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="6" width="20" height="14" rx="2"/><path d="M8 12h8M12 16V8"/>
+            </svg>
+          </div>
+          <div class="activity-info">
+            <div class="activity-title">Sedentario</div>
+            <div class="activity-desc">Trabajo de oficina, cero ejercicio. La mayor parte del día sentado.</div>
+          </div>
+          <div class="activity-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </button>
+
+        <button class="activity selected">
+          <div class="activity-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 4v16M9 4v16M5 8h14"/>
+            </svg>
+          </div>
+          <div class="activity-info">
+            <div class="activity-title">Ligero</div>
+            <div class="activity-desc">Camino algo o gimnasio 1-2 veces por semana. Trabajo activo ocasional.</div>
+          </div>
+          <div class="activity-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </button>
+
+        <button class="activity">
+          <div class="activity-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+          <div class="activity-info">
+            <div class="activity-title">Moderado</div>
+            <div class="activity-desc">Ejercicio 3-5 veces por semana. Trabajo con caminata o esfuerzo medio.</div>
+          </div>
+          <div class="activity-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </button>
+
+        <button class="activity">
+          <div class="activity-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <div class="activity-info">
+            <div class="activity-title">Activo</div>
+            <div class="activity-desc">Entrenamiento intenso 6-7 veces por semana o trabajo físico exigente.</div>
+          </div>
+          <div class="activity-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </button>
+
+        <button class="activity">
+          <div class="activity-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 4l-3 8 3 8M18 4l3 8-3 8M9 16l3-12M15 16l-3-12"/>
+            </svg>
+          </div>
+          <div class="activity-info">
+            <div class="activity-title">Muy activo</div>
+            <div class="activity-desc">Atleta o trabajo físico durísimo. Entrenamiento 2x al día o competidor.</div>
+          </div>
+          <div class="activity-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ PASO 6: PERFIL MÉDICO ============ -->
+    <div class="wiz-step" data-step="6">
+      <div class="step-eyebrow">Tu salud · Confidencial</div>
+      <h2 class="step-title">Lo que <span class="italic">debemos saber.</span></h2>
+      <p class="step-subtitle">Estas respuestas son privadas. Solo nosotros las usamos para crear un plan seguro para ti.</p>
+
+      <div class="med-section">
+        <div class="med-section-title">
+          ¿Tienes alguna de estas condiciones?
+          <span class="info-dot" title="Solo nosotros vemos esta info">i</span>
+        </div>
+        <div class="med-checks">
+          <label class="med-check checked" onclick="toggleMed(this, true)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Diabetes Tipo 2
+          </label>
+          <label class="med-check" onclick="toggleMed(this)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Diabetes Tipo 1
+          </label>
+          <label class="med-check" onclick="toggleMed(this)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Embarazo / lactancia
+          </label>
+          <label class="med-check" onclick="toggleMed(this)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Problemas renales
+          </label>
+          <label class="med-check" onclick="toggleMed(this)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Problemas hepáticos
+          </label>
+          <label class="med-check" onclick="toggleMed(this)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Tiroides comprometida
+          </label>
+          <label class="med-check warning-only" onclick="toggleMed(this)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Vesícula extirpada
+          </label>
+          <label class="med-check" onclick="toggleMed(this)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Antecedente TCA
+          </label>
+          <label class="med-check" onclick="toggleMed(this)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Cardiopatía
+          </label>
+          <label class="med-check" onclick="toggleMed(this)">
+            <span class="med-checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Ninguna de estas
+          </label>
+        </div>
+
+        <!-- Banner que aparece cuando se marca flag bloqueante -->
+        <div class="med-warning-banner" id="medWarning">
+          <div class="med-warning-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div class="med-warning-content">
+            <div class="med-warning-title">Tu condición requiere atención especial</div>
+            <div class="med-warning-text">
+              Antes de continuar, te pediremos validar tu decisión con un disclaimer adicional.
+              Tu plan tendrá ajustes específicos para tu seguridad.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="med-section">
+        <div class="med-section-title">
+          ¿Tienes alergias alimentarias?
+        </div>
+        <div class="tag-input">
+          <span class="tag">Mariscos <button class="tag-remove">×</button></span>
+          <span class="tag">Nueces <button class="tag-remove">×</button></span>
+          <input type="text" placeholder="Agrega más, separadas por enter">
+        </div>
+      </div>
+
+      <div class="med-section">
+        <div class="med-section-title">
+          ¿Restricciones alimentarias?
+        </div>
+        <div class="chip-group">
+          <button class="chip">Sin cerdo</button>
+          <button class="chip">Vegetariano</button>
+          <button class="chip">Halal</button>
+          <button class="chip">Kosher</button>
+          <button class="chip selected">Sin restricción</button>
+        </div>
+      </div>
+
+      <div class="med-section">
+        <div class="med-section-title">
+          ¿Cuánto sabes de keto?
+        </div>
+        <div class="experience-row">
+          <button class="exp-card">
+            <div class="exp-emoji">🌱</div>
+            <div class="exp-name">Principiante</div>
+            <div class="exp-desc">Es mi primera vez</div>
+          </button>
+          <button class="exp-card selected">
+            <div class="exp-emoji">🌿</div>
+            <div class="exp-name">Intermedio</div>
+            <div class="exp-desc">He hecho keto antes</div>
+          </button>
+          <button class="exp-card">
+            <div class="exp-emoji">🌳</div>
+            <div class="exp-name">Avanzado</div>
+            <div class="exp-desc">Llevo años</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PASO 6.5: OVERRIDE MÉDICO ============ -->
+    <div class="wiz-step" data-step="6.5">
+      <div class="step-eyebrow" style="color: var(--coral);">Atención · Validación adicional</div>
+      <h2 class="step-title">Para tu <span class="italic">seguridad.</span></h2>
+      <p class="step-subtitle">Marcaste una condición que requiere supervisión médica para hacer dieta cetogénica.</p>
+
+      <div class="override-card danger">
+        <div class="override-icon-wrap">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/>
+          </svg>
+        </div>
+        <div class="override-title">Lo que vamos a hacer</div>
+        <div class="override-text">
+          Si decides continuar, generamos tu plan con ajustes conservadores específicos para tu condición:
+        </div>
+        <ul class="override-list">
+          <li>Carbohidratos hasta 60g/día (en lugar de 20g) para reducir el impacto metabólico</li>
+          <li>Macros con más proteína para preservar masa muscular</li>
+          <li>Recetas más simples y con ingredientes amigables a tu condición</li>
+          <li>Recordatorio mensual para que reportes a tu médico</li>
+          <li>Banner permanente en tu plan indicando que es bajo override</li>
+        </ul>
+      </div>
+
+      <div class="override-card warning">
+        <div class="override-icon-wrap" style="background: var(--warning-bg); color: var(--warning);">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <div class="override-title">Mi compromiso</div>
+        <label class="override-checkbox-wrap">
+          <input type="checkbox">
+          <span class="override-cb-visual">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <span class="override-cb-text">Entiendo los riesgos. Estoy bajo seguimiento médico y reportaré cualquier síntoma a mi doctor. Procedo bajo mi propia responsabilidad.</span>
+        </label>
+
+        <div class="password-confirm">
+          <div class="field-label">
+            <span>Confirma con tu contraseña</span>
+            <span class="field-hint">Firma legal</span>
+          </div>
+          <div class="field-input-wrap">
+            <input type="password" placeholder="•••••••••">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PASO 7: DISCLAIMER + META ============ -->
+    <div class="wiz-step" data-step="7">
+      <div class="step-eyebrow">Tu meta · Casi listo</div>
+      <h2 class="step-title">¿Por qué <span class="italic">empiezas?</span></h2>
+      <p class="step-subtitle">Definimos tu objetivo y aceptamos los términos. Es lo último.</p>
+
+      <div class="goal-types">
+        <button class="goal-card selected">
+          <div class="goal-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
+            </svg>
+          </div>
+          <div class="goal-name">Bajar de peso</div>
+          <div class="goal-desc">Reducir grasa corporal</div>
+        </button>
+        <button class="goal-card">
+          <div class="goal-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </div>
+          <div class="goal-name">Recomposición</div>
+          <div class="goal-desc">Más músculo, menos grasa</div>
+        </button>
+        <button class="goal-card">
+          <div class="goal-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
+            </svg>
+          </div>
+          <div class="goal-name">Mantener</div>
+          <div class="goal-desc">Sostener mi peso</div>
+        </button>
+        <button class="goal-card">
+          <div class="goal-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </div>
+          <div class="goal-name">Salud general</div>
+          <div class="goal-desc">Sentirme mejor</div>
+        </button>
+      </div>
+
+      <div class="field">
+        <div class="field-label">
+          <span>¿Qué te motiva?</span>
+          <span class="field-hint">Opcional · privado</span>
+        </div>
+        <textarea class="motivation-textarea" placeholder="Ej: La boda de mi hija en septiembre, sentirme con energía para jugar con mis hijos, mi salud cardiovascular..." maxlength="500"></textarea>
+        <div class="char-counter"><span id="motivationCount">0</span>/500</div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">
+          <span>Aviso médico y términos</span>
+          <span class="field-hint">v1.0</span>
+        </div>
+        <div class="disclaimer-box">
+          <h4>Aviso médico importante</h4>
+          <p>KetoGroup AI no es un servicio médico ni nutricional profesional. Los planes alimenticios, recomendaciones y contenido generados por inteligencia artificial son puramente informativos y educativos.</p>
+          <h4>Antes de comenzar</h4>
+          <ul>
+            <li>Consulta con tu médico, especialmente si tienes condiciones preexistentes.</li>
+            <li>Informa a tu médico sobre cualquier medicamento que tomes.</li>
+            <li>Si experimentas mareos severos, dolor de pecho o síntomas preocupantes, suspende y busca atención médica.</li>
+          </ul>
+          <h4>Privacidad</h4>
+          <p>Tus datos médicos se almacenan cifrados y nunca se comparten con terceros sin tu consentimiento explícito.</p>
+        </div>
+      </div>
+
+      <label class="accept-row">
+        <input type="checkbox">
+        <span class="accept-cb">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        <span class="accept-text">
+          He leído y acepto el aviso médico y los términos. Entiendo que KetoGroup AI no sustituye atención profesional.
+        </span>
+      </label>
+    </div>
+
+    <!-- ============ PASO 8: GENERANDO ============ -->
+    <div class="wiz-step" data-step="8">
+      <div class="generating">
+        <div class="lottie-cooking" id="lottieCooking"></div>
+        <h2 class="gen-title">Cocinando tu <span class="italic">plan perfecto.</span></h2>
+        <p class="gen-sub">Esto toma entre 20 y 40 segundos. Estamos calculando tus macros y eligiendo recetas con tus ingredientes preferidos.</p>
+
+        <div class="gen-steps">
+          <div class="gen-step done">
+            <div class="gen-step-bullet"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            Calculando tu metabolismo basal
+          </div>
+          <div class="gen-step done">
+            <div class="gen-step-bullet"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            Definiendo macros objetivo
+          </div>
+          <div class="gen-step active">
+            <div class="gen-step-bullet"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            Buscando recetas con tus ingredientes
+          </div>
+          <div class="gen-step">
+            <div class="gen-step-bullet"></div>
+            Armando tu semana
+          </div>
+          <div class="gen-step">
+            <div class="gen-step-bullet"></div>
+            Generando lista de compras
+          </div>
+        </div>
+
+        <div class="gen-tip">
+          <div class="gen-tip-icon">i</div>
+          <div class="gen-tip-content">
+            <strong>Sabías que…</strong> el cuerpo tarda entre 2 y 4 días en entrar en cetosis. Las primeras 48 horas pueden traer "keto flu" leve. Hidrátate bien con electrolitos.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER FIJO -->
+  <div class="wiz-footer" id="wizFooter">
+    <button class="btn-primary" id="btnNext" onclick="goNext()">
+      Continuar
+      <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </button>
+  </div>
+
+</div>
+
+<!-- Mockup nav -->
+<div class="mockup-footer">
+  <button onclick="goToStep(1)" class="active" id="m1">Bienvenida</button>
+  <button onclick="goToStep(2)" id="m2">Datos</button>
+  <button onclick="goToStep(3)" id="m3">Métricas</button>
+  <button onclick="goToStep(4)" id="m4">Cuerpo</button>
+  <button onclick="goToStep(5)" id="m5">Activ.</button>
+  <button onclick="goToStep(6)" id="m6">Salud</button>
+  <button onclick="goToStep(6.5)" id="m6_5">Override</button>
+  <button onclick="goToStep(7)" id="m7">Meta</button>
+  <button onclick="goToStep(8)" id="m8">IA</button>
+</div>
+
+<script>
+// ============================================================
+// LOTTIE ANIMATIONS
+// ============================================================
+let welcomeAnim = lottie.loadAnimation({
+  container: document.getElementById('lottieWelcome'),
+  renderer: 'svg',
+  loop: true,
+  autoplay: true,
+  path: 'https://lottie.host/4e2a3a8c-3e9c-4cf4-8e41-1f3cfb0e8b9a/c4qXdGrkUm.json'
+});
+
+let cookingAnim = lottie.loadAnimation({
+  container: document.getElementById('lottieCooking'),
+  renderer: 'svg',
+  loop: true,
+  autoplay: true,
+  path: 'https://lottie.host/3a2e9da6-bb0c-4af9-bd34-c0b4d8b8c0e9/1QqvJjKQFm.json'
+});
+
+// ============================================================
+// WIZARD NAVIGATION
+// ============================================================
+let currentStep = 1;
+const stepOrder = [1, 2, 3, 4, 5, 6, '6.5', 7, 8];
+const breadcrumbMap = {
+  1: 0, 2: 0,         // Tú
+  3: 1, 4: 1,         // Cuerpo
+  5: 1, 6: 2, '6.5': 2,   // Salud
+  7: 3, 8: 3          // Meta
+};
+
+function goToStep(step) {
+  document.querySelectorAll('.wiz-step').forEach(s => s.classList.remove('active'));
+  const target = document.querySelector(`.wiz-step[data-step="${step}"]`);
+  if (target) target.classList.add('active');
+
+  currentStep = step;
+
+  // Update progress
+  const idx = stepOrder.indexOf(step);
+  const totalSteps = stepOrder.length;
+  const progress = ((idx + 1) / totalSteps) * 100;
+  document.getElementById('progressFill').style.width = progress + '%';
+  document.getElementById('stepCurrent').textContent = step;
+
+  // Back button
+  document.getElementById('btnBack').classList.toggle('invisible', idx === 0);
+
+  // Skip button (oculto en último paso y override)
+  document.getElementById('btnSkip').classList.toggle('invisible', step === 8 || step === '6.5');
+
+  // Footer (oculto en step 8)
+  document.getElementById('wizFooter').style.display = step === 8 ? 'none' : 'block';
+
+  // CTA dinámico
+  const btn = document.getElementById('btnNext');
+  if (step === 7) {
+    btn.innerHTML = `Generar mi plan
+      <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 3l14 9-14 9V3z"/>
+      </svg>`;
+  } else if (step === '6.5') {
+    btn.innerHTML = `Confirmar y continuar
+      <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>`;
+  } else {
+    btn.innerHTML = `Continuar
+      <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>`;
+  }
+
+  // Update breadcrumb
+  const breadcrumbIdx = breadcrumbMap[step];
+  document.querySelectorAll('#breadcrumb span').forEach((span, i) => {
+    span.classList.remove('current', 'done');
+    if (i < breadcrumbIdx) span.classList.add('done');
+    else if (i === breadcrumbIdx) span.classList.add('current');
+  });
+
+  // Update mockup buttons
+  document.querySelectorAll('.mockup-footer button').forEach(b => b.classList.remove('active'));
+  const mid = 'm' + String(step).replace('.', '_');
+  const activeBtn = document.getElementById(mid);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  window.scrollTo(0, 0);
+}
+
+function goNext() {
+  const idx = stepOrder.indexOf(currentStep);
+  if (idx < stepOrder.length - 1) {
+    // Saltar 6.5 si no aplica (en mockup pasamos por 6.5 cuando step=6 tiene flag)
+    // En producción: lógica condicional. En mockup avanzamos lineal.
+    goToStep(stepOrder[idx + 1]);
+  }
+  // Auto-progreso de gen-steps en paso 8
+  if (currentStep === 8) {
+    setTimeout(simulateGeneration, 800);
+  }
+}
+
+function goPrev() {
+  const idx = stepOrder.indexOf(currentStep);
+  if (idx > 0) goToStep(stepOrder[idx - 1]);
+}
+
+function selectChoice(type) {
+  document.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
+  document.getElementById(type === 'create' ? 'choiceCreate' : 'choiceJoin').classList.add('selected');
+  document.getElementById('inviteWrap').style.display = type === 'join' ? 'flex' : 'none';
+}
+
+function selectSil(el) {
+  document.querySelectorAll('.sil').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleMed(el, isWarning) {
+  el.classList.toggle('checked');
+  // Si es flag bloqueante (todas excepto "vesícula" y "ninguna")
+  if (!el.classList.contains('warning-only') && !el.textContent.includes('Ninguna')) {
+    const anyChecked = Array.from(document.querySelectorAll('.med-check.checked'))
+      .some(m => !m.classList.contains('warning-only') && !m.textContent.includes('Ninguna'));
+    document.getElementById('medWarning').classList.toggle('hidden', !anyChecked);
+  }
+}
+
+// Chips toggle
+document.querySelectorAll('.chip-group').forEach(group => {
+  group.addEventListener('click', e => {
+    if (e.target.classList.contains('chip')) {
+      group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      e.target.classList.add('selected');
+    }
+  });
+});
+
+// Activity cards
+document.querySelectorAll('.activity-cards').forEach(g => {
+  g.addEventListener('click', e => {
+    const card = e.target.closest('.activity');
+    if (!card) return;
+    g.querySelectorAll('.activity').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  });
+});
+
+// Goal cards
+document.querySelectorAll('.goal-types').forEach(g => {
+  g.addEventListener('click', e => {
+    const card = e.target.closest('.goal-card');
+    if (!card) return;
+    g.querySelectorAll('.goal-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  });
+});
+
+// Experience
+document.querySelectorAll('.experience-row').forEach(g => {
+  g.addEventListener('click', e => {
+    const card = e.target.closest('.exp-card');
+    if (!card) return;
+    g.querySelectorAll('.exp-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  });
+});
+
+// Char counter
+const motivation = document.querySelector('.motivation-textarea');
+if (motivation) {
+  motivation.addEventListener('input', () => {
+    document.getElementById('motivationCount').textContent = motivation.value.length;
+  });
+}
+
+// Tag remove
+document.querySelectorAll('.tag-remove').forEach(b => {
+  b.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    b.closest('.tag').remove();
+  });
+});
+
+function simulateGeneration() {
+  const steps = document.querySelectorAll('.gen-step');
+  let i = 2;
+  const advance = () => {
+    if (i >= steps.length) return;
+    steps[i].classList.remove('active');
+    steps[i].classList.add('done');
+    if (i + 1 < steps.length) {
+      steps[i + 1].classList.add('active');
+    }
+    i++;
+    setTimeout(advance, 1500);
+  };
+  setTimeout(advance, 1500);
+}
+</script>
+
+</body>
+</html>

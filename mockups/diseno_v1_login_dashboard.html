@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KetoGroup AI · Diseño v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   KetoGroup AI · Sistema de Diseño v1
+   Aesthetic: Fresh Botanical Modern
+   ============================================================ */
+
+:root {
+  /* Paleta principal */
+  --pine: #0F3D2E;
+  --pine-soft: #1B5C46;
+  --pine-darker: #0A2A20;
+  --mint: #5BC096;
+  --mint-light: #B5E2CB;
+  --mint-soft: #E0F2E8;
+  --lake: #5BA3D0;
+  --lake-light: #B8DCEC;
+  --coral: #E8866B;
+  --coral-soft: #F5C7B8;
+  --cream: #F8F4EC;
+  --cream-warm: #F1EAD8;
+  --ink: #0F2419;
+  --ink-soft: #2D3E33;
+  --ink-light: #5C6B5F;
+  --ink-muted: #8A9590;
+  --line: #E0DACD;
+  --paper: #FFFFFF;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(15, 36, 25, 0.04), 0 2px 4px rgba(15, 36, 25, 0.03);
+  --shadow-md: 0 4px 8px rgba(15, 36, 25, 0.05), 0 8px 24px rgba(15, 36, 25, 0.06);
+  --shadow-lg: 0 8px 16px rgba(15, 36, 25, 0.07), 0 16px 48px rgba(15, 36, 25, 0.10);
+  --shadow-pine: 0 8px 32px rgba(15, 61, 46, 0.18);
+
+  /* Radii */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+
+  /* Spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-20: 80px;
+
+  /* Type */
+  --display: 'Fraunces', Georgia, serif;
+  --body: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* Easing */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+html, body {
+  font-family: var(--body);
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+  font-feature-settings: "ss01", "ss02", "cv11";
+  overflow-x: hidden;
+}
+
+/* Grain texture global sutil (decorativo) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.06 0 0 0 0 0.14 0 0 0 0 0.10 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+/* Tipografía base */
+.display { font-family: var(--display); font-weight: 400; letter-spacing: -0.02em; }
+.italic { font-style: italic; }
+
+/* Botones base */
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ============================================================
+   SWITCHER (solo para mockup)
+   ============================================================ */
+.switcher {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: var(--pine);
+  color: var(--cream);
+  padding: 6px;
+  border-radius: var(--r-pill);
+  display: flex;
+  gap: 4px;
+  box-shadow: var(--shadow-pine);
+  font-size: 13px;
+  font-weight: 500;
+}
+.switcher button {
+  color: var(--cream);
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s var(--ease-out);
+}
+.switcher button.active {
+  background: var(--mint);
+  color: var(--pine-darker);
+}
+
+/* Vistas */
+.view {
+  display: none;
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+.view.active {
+  display: block;
+  animation: fadeUp 0.7s var(--ease-out);
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   VISTA 1: LOGIN
+   ============================================================ */
+
+.login-wrap {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  min-height: 100vh;
+  background: var(--cream);
+}
+
+@media (max-width: 880px) {
+  .login-wrap {
+    grid-template-columns: 1fr;
+    grid-template-rows: 280px 1fr;
+  }
+}
+
+/* Lado izquierdo: visual hero */
+.login-hero {
+  position: relative;
+  background: linear-gradient(160deg, var(--pine) 0%, var(--pine-soft) 100%);
+  color: var(--cream);
+  padding: var(--s-12) var(--s-12);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border-bottom-right-radius: 80px;
+}
+@media (max-width: 880px) {
+  .login-hero {
+    padding: var(--s-6);
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 60px;
+    border-bottom-right-radius: 60px;
+  }
+}
+
+/* Hojas decorativas SVG */
+.leaf {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.18;
+}
+.leaf-1 { top: -40px; right: -20px; width: 280px; transform: rotate(15deg); }
+.leaf-2 { bottom: 60px; left: -40px; width: 200px; transform: rotate(-25deg); opacity: 0.12; }
+.leaf-3 { top: 40%; right: 15%; width: 80px; opacity: 0.22; transform: rotate(45deg); }
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 2;
+}
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  background: var(--mint);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.brand-mark::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  background: var(--pine);
+  clip-path: path('M14 0 Q18 8 14 22 Q10 8 14 0 Z');
+}
+.brand-name {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.brand-name .ai {
+  font-style: italic;
+  color: var(--mint-light);
+  font-weight: 300;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 460px;
+}
+.hero-eyebrow {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint-light);
+  margin-bottom: var(--s-5);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--mint);
+}
+.hero-title {
+  font-family: var(--display);
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  margin-bottom: var(--s-5);
+}
+.hero-title .accent {
+  font-style: italic;
+  color: var(--mint-light);
+  font-variation-settings: "SOFT" 100;
+}
+.hero-subtitle {
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(248, 244, 236, 0.82);
+  max-width: 380px;
+}
+
+.hero-foot {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  font-size: 13px;
+  color: rgba(248, 244, 236, 0.65);
+}
+@media (max-width: 880px) { .hero-foot { display: none; } }
+
+.hero-foot-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 0 4px rgba(91, 192, 150, 0.25);
+  animation: pulse 2.4s var(--ease-out) infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(91, 192, 150, 0.25); }
+  50%     { box-shadow: 0 0 0 8px rgba(91, 192, 150, 0.05); }
+}
+
+/* Lado derecho: form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--s-12) var(--s-10);
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
+@media (max-width: 880px) { .login-form { padding: var(--s-8) var(--s-5); } }
+
+.form-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-bottom: var(--s-3);
+}
+.form-title {
+  font-family: var(--display);
+  font-size: 38px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink);
+  margin-bottom: var(--s-2);
+}
+.form-title .italic { color: var(--pine); }
+.form-subtitle {
+  font-size: 15px;
+  color: var(--ink-light);
+  margin-bottom: var(--s-10);
+}
+
+.field {
+  margin-bottom: var(--s-5);
+}
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: var(--s-2);
+  letter-spacing: 0.01em;
+}
+.field-input {
+  position: relative;
+}
+.field input {
+  width: 100%;
+  padding: 16px 18px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--r-md);
+  font-size: 15px;
+  color: var(--ink);
+  transition: all 0.2s var(--ease-out);
+  font-family: var(--body);
+}
+.field input::placeholder { color: var(--ink-muted); }
+.field input:focus {
+  outline: none;
+  border-color: var(--pine);
+  box-shadow: 0 0 0 4px rgba(15, 61, 46, 0.08);
+}
+.field-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -8px;
+  margin-bottom: var(--s-6);
+}
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-light);
+  cursor: pointer;
+}
+.checkbox input { width: 18px; height: 18px; accent-color: var(--pine); }
+.link {
+  font-size: 13px;
+  color: var(--pine);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(15, 61, 46, 0.2);
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.2s;
+}
+.link:hover { text-decoration-color: var(--pine); }
+
+.btn-primary {
+  width: 100%;
+  padding: 17px 24px;
+  background: var(--pine);
+  color: var(--cream);
+  border-radius: var(--r-md);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.25s var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(91, 192, 150, 0.25) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s var(--ease-out);
+}
+.btn-primary:hover { background: var(--pine-darker); transform: translateY(-1px); }
+.btn-primary:hover::before { transform: translateX(100%); }
+.btn-primary svg { transition: transform 0.25s var(--ease-out); }
+.btn-primary:hover svg { transform: translateX(3px); }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin: var(--s-6) 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 15px 24px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s var(--ease-out);
+}
+.btn-secondary:hover { border-color: var(--pine); background: var(--cream); }
+
+.form-foot {
+  margin-top: var(--s-8);
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-light);
+}
+.form-foot a {
+  color: var(--pine);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.terms {
+  margin-top: var(--s-6);
+  font-size: 12px;
+  color: var(--ink-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+.terms a { color: var(--ink-light); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ============================================================
+   VISTA 2: DASHBOARD "TODAY"
+   ============================================================ */
+
+.dash {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 var(--s-5) 120px;
+  background: var(--cream);
+  position: relative;
+}
+
+/* Header */
+.dash-header {
+  padding: var(--s-6) 0 var(--s-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dash-brand {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--pine);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-brand .leaf-icon {
+  width: 22px;
+  height: 22px;
+  fill: var(--mint);
+}
+
+.dash-actions { display: flex; gap: 10px; }
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  background: var(--paper);
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  position: relative;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s var(--ease-out);
+}
+.icon-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.icon-btn .badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: var(--coral);
+  border-radius: 50%;
+  border: 2px solid var(--paper);
+}
+.icon-btn img.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--mint), var(--lake));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pine-darker);
+  font-weight: 700;
+  font-size: 16px;
+  font-family: var(--body);
+}
+
+/* Saludo */
+.greeting {
+  margin-bottom: var(--s-6);
+  position: relative;
+}
+.greeting-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mint);
+  margin-bottom: var(--s-2);
+}
+.greeting-title {
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.greeting-title .italic {
+  font-style: italic;
+  color: var(--pine);
+}
+.greeting-date {
+  font-size: 13px;
+  color: var(--ink-light);
+  margin-top: var(--s-2);
+}
+
+/* Card del día - Macros */
+.macros-card {
+  background: var(--pine);
+  color: var(--cream);
+  border-radius: var(--r-xl);
+  padding: var(--s-6);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--s-5);
+  box-shadow: var(--shadow-pine);
+}
+
+.macros-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(91,192,150,0.18), transparent 70%);
+  border-radius: 50%;
+}
+
+.macros-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--s-5);
+  position: relative;
+}
+.macros-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mint-light);
+  margin-bottom: 4px;
+}
+.macros-title {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.macros-title .italic { font-style: italic; color: var(--mint-light); }
+.macros-pill {
+  background: rgba(91,192,150,0.18);
+  border: 1px solid rgba(91,192,150,0.32);
+  color: var(--mint-light);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.macros-pill .dot { width: 6px; height: 6px; background: var(--mint); border-radius: 50%; }
+
+.macros-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-4);
+  margin-bottom: var(--s-4);
+  position: relative;
+}
+.macro {
+  display: flex;
+  flex-direction: column;
+}
+.macro-name {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(248,244,236,0.55);
+  margin-bottom: 6px;
+}
+.macro-value {
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.macro-value .small {
+  font-size: 16px;
+  color: rgba(248,244,236,0.65);
+  margin-left: 2px;
+}
+.macro-bar {
+  height: 4px;
+  background: rgba(248,244,236,0.12);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.macro-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s var(--ease-out);
+}
+.macro-bar-fill.fat { background: var(--mint); width: 72%; }
+.macro-bar-fill.protein { background: var(--lake); width: 58%; }
+.macro-bar-fill.carbs { background: var(--coral); width: 35%; }
+
+.macros-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--s-4);
+  border-top: 1px solid rgba(248,244,236,0.10);
+  position: relative;
+}
+.macros-cal-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.macros-cal-circle {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: conic-gradient(var(--mint) 65%, rgba(248,244,236,0.12) 65%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.macros-cal-circle::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  background: var(--pine);
+  border-radius: 50%;
+}
+.macros-cal-circle span {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 700;
+}
+.macros-cal-text { font-size: 13px; }
+.macros-cal-text strong { display: block; font-weight: 600; }
+.macros-cal-text small { color: rgba(248,244,236,0.6); font-size: 11px; }
+.macros-arrow {
+  color: var(--mint-light);
+  background: rgba(91,192,150,0.12);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Quick actions */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+  margin-bottom: var(--s-6);
+}
+.quick-action {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  transition: all 0.2s var(--ease-out);
+  text-align: left;
+}
+.quick-action:hover { border-color: var(--pine); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.qa-icon {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.qa-icon.weigh { background: var(--lake-light); color: var(--lake); }
+.qa-icon.checkin { background: var(--mint-soft); color: var(--pine); }
+.qa-text { display: flex; flex-direction: column; }
+.qa-title { font-size: 14px; font-weight: 600; color: var(--ink); }
+.qa-meta { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+
+/* Sección de comidas */
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--s-4);
+}
+.section-title {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.section-title .italic { font-style: italic; color: var(--pine); }
+.section-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pine);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.meals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin-bottom: var(--s-8);
+}
+.meal {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
+  display: flex;
+  gap: var(--s-4);
+  align-items: center;
+  position: relative;
+  transition: all 0.2s var(--ease-out);
+}
+.meal:hover { border-color: var(--mint); box-shadow: var(--shadow-md); }
+.meal-thumb {
+  width: 64px; height: 64px;
+  border-radius: var(--r-md);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.meal-thumb-1 { background: linear-gradient(135deg, #F5C7B8, #E8866B); }
+.meal-thumb-2 { background: linear-gradient(135deg, #B5E2CB, #5BC096); }
+.meal-thumb-3 { background: linear-gradient(135deg, #B8DCEC, #5BA3D0); }
+.meal-thumb svg {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 32px;
+  height: 32px;
+  fill: rgba(255,255,255,0.85);
+}
+.meal-info { flex: 1; min-width: 0; }
+.meal-time {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+}
+.meal-name {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: -0.005em;
+}
+.meal-macros {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--ink-light);
+}
+.meal-macros span { display: inline-flex; align-items: center; gap: 4px; }
+.meal-macros span::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+.meal-macros .kcal::before { background: var(--mint); }
+.meal-macros .prot::before { background: var(--lake); }
+.meal-macros .fat::before { background: var(--coral); }
+
+.meal-state {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.meal-state.done { background: var(--mint-soft); color: var(--pine); }
+.meal-state.upcoming { background: var(--cream-warm); color: var(--ink-light); }
+
+.meal.locked::after {
+  content: '';
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 20px; height: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230F3D2E'%3E%3Cpath d='M12 1a5 5 0 0 0-5 5v3H6a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3h-1V6a5 5 0 0 0-5-5zm-3 8V6a3 3 0 1 1 6 0v3H9z'/%3E%3C/svg%3E");
+  background-size: contain;
+}
+
+/* Sección familia */
+.family-card {
+  background: linear-gradient(135deg, var(--cream-warm), var(--mint-soft));
+  border-radius: var(--r-xl);
+  padding: var(--s-5);
+  position: relative;
+  overflow: hidden;
+}
+.family-card::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; right: -20px;
+  width: 140px; height: 140px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235BC096' opacity='0.18'%3E%3Cpath d='M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z'/%3E%3C/svg%3E") no-repeat;
+  background-size: contain;
+}
+.family-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pine);
+  margin-bottom: var(--s-2);
+}
+.family-title {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--s-3);
+  line-height: 1.25;
+}
+.family-title .italic { font-style: italic; color: var(--pine); }
+.family-avatars {
+  display: flex;
+  margin-bottom: var(--s-3);
+  position: relative;
+}
+.family-av {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--cream-warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pine-darker);
+}
+.family-av:not(:first-child) { margin-left: -10px; }
+.family-av-1 { background: linear-gradient(135deg, var(--mint), var(--lake)); }
+.family-av-2 { background: linear-gradient(135deg, var(--coral-soft), var(--coral)); }
+.family-av-3 { background: linear-gradient(135deg, var(--mint-light), var(--mint)); }
+.family-av-4 { background: linear-gradient(135deg, var(--lake-light), var(--lake)); color: white; }
+.family-av.more { background: var(--paper); color: var(--pine); border-color: var(--paper); font-size: 11px; }
+
+.family-status {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin-bottom: var(--s-4);
+}
+.family-status strong { color: var(--pine); font-weight: 600; }
+
+.family-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--pine);
+  color: var(--cream);
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s var(--ease-out);
+}
+.family-cta:hover { transform: translateX(2px); }
+
+/* Bottom nav */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 448px;
+  background: var(--pine);
+  border-radius: var(--r-pill);
+  margin: 16px;
+  padding: 8px;
+  display: flex;
+  justify-content: space-around;
+  z-index: 100;
+  box-shadow: var(--shadow-pine);
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0;
+  color: rgba(248,244,236,0.55);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--r-pill);
+  transition: all 0.2s var(--ease-out);
+  position: relative;
+}
+.nav-item.active {
+  background: var(--mint);
+  color: var(--pine-darker);
+}
+.nav-item svg { width: 20px; height: 20px; }
+
+/* Animaciones de entrada en dashboard */
+.view#dashboard.active .dash-header { animation: slideDown 0.5s var(--ease-out) both; }
+.view#dashboard.active .greeting { animation: slideDown 0.6s var(--ease-out) 0.05s both; }
+.view#dashboard.active .macros-card { animation: slideUp 0.7s var(--ease-out) 0.1s both; }
+.view#dashboard.active .quick-actions { animation: slideUp 0.7s var(--ease-out) 0.2s both; }
+.view#dashboard.active .meals-section { animation: slideUp 0.7s var(--ease-out) 0.3s both; }
+.view#dashboard.active .family-card { animation: slideUp 0.7s var(--ease-out) 0.4s both; }
+.view#dashboard.active .bottom-nav { animation: slideUp 0.5s var(--ease-out) 0.5s both; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+</style>
+</head>
+<body>
+
+<!-- Switcher de mockup -->
+<div class="switcher">
+  <button class="active" onclick="show('login')">Login</button>
+  <button onclick="show('dashboard')">Dashboard</button>
+</div>
+
+<!-- ========== VISTA 1: LOGIN ========== -->
+<div class="view active" id="login">
+  <div class="login-wrap">
+
+    <!-- Hero izquierdo -->
+    <div class="login-hero">
+      <!-- Hojas SVG decorativas -->
+      <svg class="leaf leaf-1" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path d="M100 20 Q140 60 130 130 Q120 175 100 180 Q80 175 70 130 Q60 60 100 20 Z" fill="#5BC096"/>
+        <path d="M100 30 L100 175" stroke="#0F3D2E" stroke-width="1.5" opacity="0.4"/>
+      </svg>
+      <svg class="leaf leaf-2" viewBox="0 0 200 200">
+        <path d="M100 20 Q140 60 130 130 Q120 175 100 180 Q80 175 70 130 Q60 60 100 20 Z" fill="#5BC096"/>
+      </svg>
+      <svg class="leaf leaf-3" viewBox="0 0 200 200">
+        <path d="M100 20 Q140 60 130 130 Q120 175 100 180 Q80 175 70 130 Q60 60 100 20 Z" fill="#B5E2CB"/>
+      </svg>
+
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div class="brand-name">KetoGroup<span class="ai"> AI</span></div>
+      </div>
+
+      <div class="hero-content">
+        <div class="hero-eyebrow">Coach Familiar Cetogénico</div>
+        <h1 class="hero-title">
+          Bienvenidos de regreso a su <span class="accent italic">reto compartido.</span>
+        </h1>
+        <p class="hero-subtitle">
+          La plataforma donde tu familia se acompaña en su transformación. Planes
+          personalizados que se adaptan a cada cuerpo, mientras cocinan los mismos
+          ingredientes en casa.
+        </p>
+      </div>
+
+      <div class="hero-foot">
+        <span class="hero-foot-dot"></span>
+        <span>Tu familia tiene 12 días seguidos en el reto</span>
+      </div>
+    </div>
+
+    <!-- Form derecho -->
+    <div class="login-form">
+      <div class="form-eyebrow">Iniciar sesión</div>
+      <h2 class="form-title">Hola otra vez, <span class="italic">¿cómo amaneciste?</span></h2>
+      <p class="form-subtitle">Entra para ver tu plan de hoy y los avances de tu familia.</p>
+
+      <form onsubmit="event.preventDefault(); show('dashboard');">
+        <div class="field">
+          <label for="email">Correo electrónico</label>
+          <div class="field-input">
+            <input id="email" type="email" placeholder="tu@correo.com" autocomplete="email" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <div class="field-input">
+            <input id="password" type="password" placeholder="•••••••••" autocomplete="current-password" required>
+            <svg class="field-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label class="checkbox">
+            <input type="checkbox">
+            Recordarme en este dispositivo
+          </label>
+          <a href="#" class="link">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          Entrar a mi cuenta
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+
+        <div class="divider">o continúa con</div>
+
+        <button type="button" class="btn-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continuar con Google
+        </button>
+      </form>
+
+      <div class="form-foot">
+        ¿Es la primera vez que entras? <a href="#">Únete a tu familia</a>
+      </div>
+
+      <div class="terms">
+        Al entrar aceptas los <a href="#">términos de servicio</a> y el <a href="#">aviso de privacidad</a>.
+        KetoGroup AI no sustituye atención médica profesional.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========== VISTA 2: DASHBOARD ========== -->
+<div class="view" id="dashboard">
+  <div class="dash">
+
+    <!-- Header -->
+    <div class="dash-header">
+      <div class="dash-brand">
+        <svg class="leaf-icon" viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
+        KetoGroup
+      </div>
+      <div class="dash-actions">
+        <button class="icon-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="badge"></span>
+        </button>
+        <button class="icon-btn">
+          <div class="avatar-fallback">E</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Saludo -->
+    <div class="greeting">
+      <div class="greeting-eyebrow">Buenos días</div>
+      <h1 class="greeting-title">
+        Eduardo, <span class="italic">vamos por hoy.</span>
+      </h1>
+      <div class="greeting-date">Jueves, 7 de mayo · Día 12 de tu reto</div>
+    </div>
+
+    <!-- Card de macros del día -->
+    <div class="macros-card">
+      <div class="macros-header">
+        <div>
+          <div class="macros-label">Mi día · Macros</div>
+          <div class="macros-title">Vas <span class="italic">muy bien.</span></div>
+        </div>
+        <div class="macros-pill"><span class="dot"></span>En meta</div>
+      </div>
+
+      <div class="macros-grid">
+        <div class="macro">
+          <div class="macro-name">Grasa</div>
+          <div class="macro-value">98<span class="small">g</span></div>
+          <div class="macro-bar"><div class="macro-bar-fill fat"></div></div>
+        </div>
+        <div class="macro">
+          <div class="macro-name">Proteína</div>
+          <div class="macro-value">88<span class="small">g</span></div>
+          <div class="macro-bar"><div class="macro-bar-fill protein"></div></div>
+        </div>
+        <div class="macro">
+          <div class="macro-name">Carbs</div>
+          <div class="macro-value">12<span class="small">g</span></div>
+          <div class="macro-bar"><div class="macro-bar-fill carbs"></div></div>
+        </div>
+      </div>
+
+      <div class="macros-footer">
+        <div class="macros-cal-info">
+          <div class="macros-cal-circle"><span>65%</span></div>
+          <div class="macros-cal-text">
+            <strong>1,420 / 2,180 kcal</strong>
+            <small>760 kcal por consumir</small>
+          </div>
+        </div>
+        <div class="macros-arrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="quick-actions">
+      <button class="quick-action">
+        <div class="qa-icon weigh">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/>
+          </svg>
+        </div>
+        <div class="qa-text">
+          <div class="qa-title">Registrar peso</div>
+          <div class="qa-meta">Última: 87.4 kg · ayer</div>
+        </div>
+      </button>
+      <button class="quick-action">
+        <div class="qa-icon checkin">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <div class="qa-text">
+          <div class="qa-title">Check-in del día</div>
+          <div class="qa-meta">60 segundos · pendiente</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Comidas de hoy -->
+    <div class="meals-section">
+      <div class="section-head">
+        <h2 class="section-title">Comidas de <span class="italic">hoy</span></h2>
+        <a href="#" class="section-link">Ver semana</a>
+      </div>
+
+      <div class="meals">
+        <div class="meal locked">
+          <div class="meal-thumb meal-thumb-1">
+            <svg viewBox="0 0 24 24"><path d="M12 2L8 6h2v8H6l4 4 4-4h-4V6h2L12 2z M3 22h18v-2H3v2z"/></svg>
+          </div>
+          <div class="meal-info">
+            <div class="meal-time">Desayuno · 8:30</div>
+            <div class="meal-name">Huevos rancheros con aguacate</div>
+            <div class="meal-macros">
+              <span class="kcal">420 kcal</span>
+              <span class="prot">22g P</span>
+              <span class="fat">36g G</span>
+            </div>
+          </div>
+          <div class="meal-state done">Completado</div>
+        </div>
+
+        <div class="meal">
+          <div class="meal-thumb meal-thumb-2">
+            <svg viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
+          </div>
+          <div class="meal-info">
+            <div class="meal-time">Comida · 14:00</div>
+            <div class="meal-name">Salmón al chipotle con espárragos</div>
+            <div class="meal-macros">
+              <span class="kcal">580 kcal</span>
+              <span class="prot">42g P</span>
+              <span class="fat">38g G</span>
+            </div>
+          </div>
+          <div class="meal-state upcoming">En 2h</div>
+        </div>
+
+        <div class="meal">
+          <div class="meal-thumb meal-thumb-3">
+            <svg viewBox="0 0 24 24"><path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.20-1.10-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z"/></svg>
+          </div>
+          <div class="meal-info">
+            <div class="meal-time">Cena · 20:30</div>
+            <div class="meal-name">Bowl de pollo al limón con kale</div>
+            <div class="meal-macros">
+              <span class="kcal">480 kcal</span>
+              <span class="prot">36g P</span>
+              <span class="fat">28g G</span>
+            </div>
+          </div>
+          <div class="meal-state upcoming">Pendiente</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card de familia -->
+    <div class="family-card">
+      <div class="family-eyebrow">Familia Pérez · 4 activos hoy</div>
+      <h3 class="family-title">
+        Mamá lleva <span class="italic">6 días seguidos.</span> ¿Le echamos porras?
+      </h3>
+      <div class="family-avatars">
+        <div class="family-av family-av-1">M</div>
+        <div class="family-av family-av-2">P</div>
+        <div class="family-av family-av-3">L</div>
+        <div class="family-av family-av-4">A</div>
+        <div class="family-av more">+3</div>
+      </div>
+      <p class="family-status">
+        <strong>3 personas</strong> hicieron check-in hoy. <strong>Lupita</strong> compartió
+        una foto de su comida hace 12 minutos.
+      </p>
+      <a href="#" class="family-cta">
+        Ver muro
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <a href="#" class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      Hoy
+    </a>
+    <a href="#" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Plan
+    </a>
+    <a href="#" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Familia
+    </a>
+    <a href="#" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+      Avances
+    </a>
+    <a href="#" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Yo
+    </a>
+  </nav>
+</div>
+
+<script>
+  function show(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+    document.querySelectorAll('.switcher button').forEach(b => b.classList.remove('active'));
+    event && event.target.classList && event.target.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+</script>
+
+</body>
+</html>
