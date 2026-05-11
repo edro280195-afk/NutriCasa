@@ -13,6 +13,7 @@ export interface ProgressSummaryDto {
 
 export interface WeightEntryDto {
   date: string;
+  weightKg: number;
   heightPercent: number;
   color: string;
 }
