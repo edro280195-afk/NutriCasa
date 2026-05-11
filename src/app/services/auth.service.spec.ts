@@ -22,12 +22,12 @@ describe('AuthService', () => {
     accessToken: 'test-access',
     refreshToken: 'test-refresh',
     expiresIn: 900,
-    user: { userId: 'u1', fullName: 'Test User', email: 'test@test.com', emailVerified: true, onboardingComplete: false },
+    user: { userId: 'u1', fullName: 'Test User', email: 'test@test.com', emailVerified: true, onboardingComplete: false, role: 'member' },
   };
 
   const mockProfile: UserProfile = {
     userId: 'u1', fullName: 'Test User', email: 'test@test.com',
-    emailVerified: true, onboardingComplete: false,
+    emailVerified: true, onboardingComplete: false, role: 'member',
   };
 
   beforeEach(() => {
