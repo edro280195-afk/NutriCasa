@@ -1,10 +1,12 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { PlanService } from '../../services/plan.service';
+import { RecipeService } from '../../services/recipe.service';
 import { LottieAnimationComponent } from '../../components/lottie-animation/lottie-animation.component';
 import { NcToastService } from '../../shared/components/nc-toast.service';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import type { PlanGenerationResult, DayPlanDto, MealPlanDto, MealLogStatus } from '../../models/plan.models';
+import type { FavoriteRecipeDto } from '../../models/recipe.models';
 
 @Component({
   selector: 'app-plan',
@@ -102,6 +104,11 @@ import type { PlanGenerationResult, DayPlanDto, MealPlanDto, MealLogStatus } fro
                   </div>
                 </div>
                 <div class="meal-actions">
+                  <button class="fav-btn" [class.faved]="isFavorite(meal.recipe.recipeId)" (click)="$event.stopPropagation(); toggleFavorite(meal.recipe.recipeId)" title="Favorita">
+                    <svg width="16" height="16" viewBox="0 0 24 24" [attr.fill]="isFavorite(meal.recipe.recipeId) ? 'var(--coral)' : 'none'" stroke="var(--coral)" stroke-width="2">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                  </button>
                   @if (meal.isLocked) {
                     <button class="lock-btn locked" (click)="toggleLock(p.planId, meal)" title="Desbloquear">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -157,6 +164,28 @@ import type { PlanGenerationResult, DayPlanDto, MealPlanDto, MealLogStatus } fro
             </div>
           </details>
         }
+
+        @if (favoritedInPlan().length > 0) {
+          <div class="fav-section-card">
+            <div class="fav-section-header" (click)="showFavorites.update(v => !v)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--coral)" stroke="var(--coral)" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              <span class="fav-section-title">Favoritas de la semana ({{ favoritedInPlan().length }})</span>
+              <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" [style.transform]="showFavorites() ? 'rotate(180deg)' : ''"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            @if (showFavorites()) {
+              <div class="fav-list">
+                @for (fav of favoritedInPlan(); track fav.recipeId) {
+                  <div class="fav-chip">
+                    <span>{{ fav.name }}</span>
+                    <span class="fav-chip-macros">{{ fav.calories }} kcal</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
       }
     } @else {
       <div class="empty-state">
@@ -176,9 +205,16 @@ import type { PlanGenerationResult, DayPlanDto, MealPlanDto, MealLogStatus } fro
     <div class="meal-drawer">
       <div class="drawer-header">
         <h3 class="drawer-title">{{ getMealLabel(meal.mealType) }}</h3>
-        <button class="drawer-close" (click)="closeDrawer()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <div class="drawer-header-actions">
+          <button class="fav-btn-lg" [class.faved]="isFavorite(meal.recipe.recipeId)" (click)="toggleFavorite(meal.recipe.recipeId)" title="Favorita">
+            <svg width="20" height="20" viewBox="0 0 24 24" [attr.fill]="isFavorite(meal.recipe.recipeId) ? 'var(--coral)' : 'none'" stroke="var(--coral)" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+          <button class="drawer-close" (click)="closeDrawer()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
       </div>
       <h4 class="drawer-recipe">{{ meal.recipe.name }}</h4>
 
@@ -363,6 +399,18 @@ import type { PlanGenerationResult, DayPlanDto, MealPlanDto, MealLogStatus } fro
     .day-macros { animation: slideUp 0.7s var(--ease-out) 0.2s both; }
     .meals { animation: slideUp 0.7s var(--ease-out) 0.25s both; }
 
+    .fav-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; transition: transform 0.15s; }
+    .fav-btn:hover { transform: scale(1.2); }
+    .fav-btn-lg { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; transition: transform 0.15s; }
+    .fav-btn-lg:hover { transform: scale(1.15); }
+    .drawer-header-actions { display: flex; gap: 4px; align-items: center; }
+    .fav-section-card { margin-top: 16px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+    .fav-section-header { display: flex; align-items: center; gap: 8px; padding: 14px 16px; cursor: pointer; user-select: none; font-size: 13px; font-weight: 700; color: var(--ink); }
+    .fav-section-title { flex: 1; }
+    .fav-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .fav-chip { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--cream); border: 1px solid var(--line); border-radius: var(--r-pill); font-size: 12px; font-weight: 600; color: var(--ink); }
+    .fav-chip-macros { font-size: 10px; color: var(--ink-muted); font-weight: 400; }
+
     .cdk-drag-preview {
       box-sizing: border-box;
       border-radius: var(--r-lg);
@@ -375,6 +423,7 @@ import type { PlanGenerationResult, DayPlanDto, MealPlanDto, MealLogStatus } fro
 })
 export class PlanPage {
   private readonly planService = inject(PlanService);
+  private readonly recipeService = inject(RecipeService);
   private readonly toast = inject(NcToastService);
 
   readonly plan = signal<PlanGenerationResult | null>(null);
@@ -388,6 +437,9 @@ export class PlanPage {
   readonly portionValue = signal(1);
   readonly mealLogStatuses = signal<Record<string, MealLogStatus>>({});
   readonly logging = signal(false);
+  readonly favoriteIds = signal<Set<string>>(new Set());
+  readonly favorites = signal<FavoriteRecipeDto[]>([]);
+  readonly showFavorites = signal(false);
 
   private readonly storageKey = 'nutricasa_shopping_checked';
 
@@ -400,6 +452,7 @@ export class PlanPage {
   constructor() {
     this.loadPlan();
     this.loadCheckedState();
+    this.loadFavorites();
   }
 
   weekRange(): string {
@@ -514,6 +567,45 @@ export class PlanPage {
       if (saved) this.checkedItems.set(new Set(JSON.parse(saved)));
     } catch { /* ignore */ }
   }
+
+  private loadFavorites() {
+    this.recipeService.getFavorites().subscribe({
+      next: (favs) => {
+        this.favorites.set(favs);
+        this.favoriteIds.set(new Set(favs.map(f => f.recipeId)));
+      },
+    });
+  }
+
+  isFavorite(recipeId: string): boolean {
+    return this.favoriteIds().has(recipeId);
+  }
+
+  toggleFavorite(recipeId: string) {
+    if (this.isFavorite(recipeId)) {
+      this.recipeService.removeFavorite(recipeId).subscribe({
+        next: () => {
+          this.favoriteIds.update(ids => { ids.delete(recipeId); return new Set(ids); });
+          this.favorites.update(favs => favs.filter(f => f.recipeId !== recipeId));
+        },
+      });
+    } else {
+      this.recipeService.addFavorite(recipeId).subscribe({
+        next: () => {
+          this.favoriteIds.update(ids => new Set(ids).add(recipeId));
+          this.loadFavorites();
+        },
+      });
+    }
+  }
+
+  readonly favoritedInPlan = computed(() => {
+    const p = this.plan();
+    if (!p) return [];
+    const allRecipes = p.days.flatMap(d => d.meals).map(m => m.recipe);
+    const favIds = this.favoriteIds();
+    return allRecipes.filter(r => favIds.has(r.recipeId));
+  });
 
   logMeal(status: MealLogStatus, planId: string, meal: MealPlanDto) {
     this.selectedLogStatus.set(status);

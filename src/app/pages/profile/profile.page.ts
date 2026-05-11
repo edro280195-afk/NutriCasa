@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { SubscriptionService } from '../../services/subscription.service';
 
 
 @Component({
@@ -27,7 +28,7 @@ import { AuthService } from '../../services/auth.service';
       </div>
       <h1 class="profile-name">{{ user().user?.fullName || 'Usuario' }}</h1>
       <div class="profile-email">{{ user().user?.email }}</div>
-      <div class="profile-badge">Plan Básico</div>
+      <div class="profile-badge">{{ planName() }}</div>
     </div>
 
     <div class="profile-stats">
@@ -81,6 +82,30 @@ import { AuthService } from '../../services/auth.service';
         <div class="si-content">
           <div class="si-title">Mi grupo familiar</div>
           <div class="si-meta">Miembros, racha, adherencia</div>
+        </div>
+        <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+
+      @if (isAdmin()) {
+        <div class="settings-item" routerLink="/admin/dashboard">
+          <div class="si-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="si-content">
+            <div class="si-title">Panel Admin</div>
+            <div class="si-meta">Dashboard, usuarios, publicaciones</div>
+          </div>
+          <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      }
+
+      <div class="settings-item" routerLink="/profile/subscription">
+        <div class="si-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div class="si-content">
+          <div class="si-title">Mi suscripción</div>
+          <div class="si-meta">Plan, facturación, cancelar</div>
         </div>
         <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </div>
@@ -239,8 +264,20 @@ import { AuthService } from '../../services/auth.service';
 export class ProfilePage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly subscriptionService = inject(SubscriptionService);
 
   readonly user = this.auth.state;
+  readonly isAdmin = computed(() => this.auth.isAdmin());
+  readonly subName = signal<string>('Cargando...');
+
+  constructor() {
+    this.subscriptionService.getMySubscription().subscribe({
+      next: (sub) => this.subName.set(sub?.planName ?? 'Gratis'),
+      error: () => this.subName.set('Gratis'),
+    });
+  }
+
+  readonly planName = this.subName.asReadonly();
 
   initials(): string {
     const name = this.user().user?.fullName || 'U';

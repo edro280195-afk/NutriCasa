@@ -16,3 +16,13 @@ export const appConfig: ApplicationConfig = {
     }),
   ],
 };
+
+export function checkForUpdates(sw: import('@angular/service-worker').SwUpdate) {
+  if (!isDevMode()) {
+    sw.versionUpdates.subscribe(evt => {
+      if (evt.type === 'VERSION_READY') {
+        sw.activateUpdate().then(() => document.location.reload());
+      }
+    });
+  }
+}

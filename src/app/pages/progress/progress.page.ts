@@ -1,7 +1,8 @@
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { ProgressService } from '../../services/progress.service';
 import { PlanService } from '../../services/plan.service';
-import type { ProgressSummaryDto, WeightEntryDto, CheckinDayDto, WeeklyMacrosDto } from '../../models/progress.models';
+import { NcToastService } from '../../shared/components/nc-toast.service';
+import type { ProgressSummaryDto, WeightEntryDto, CheckinDayDto, WeeklyMacrosDto, ProgressPhotoDto } from '../../models/progress.models';
 import {
   NcWeightChartComponent,
   NcCheckinHeatmapComponent,
@@ -107,6 +108,60 @@ import type { DayMacroBars } from '../../shared/components';
           </div>
         }
       </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Fotos de progreso</h2>
+          <button class="card-action" (click)="fileInput.click()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Subir
+          </button>
+          <input #fileInput type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)" hidden>
+        </div>
+
+        @if (uploading()) {
+          <div class="photo-uploading">
+            <div class="spinner-sm"></div>
+            <span>Subiendo foto...</span>
+          </div>
+        }
+
+        @if (photos().length) {
+          <div class="photo-grid">
+            @for (p of photos(); track p.photoId) {
+              <div class="photo-item" (click)="viewPhoto(p)">
+                <img [src]="p.photoUrl" [alt]="'Foto ' + p.takenAt" loading="lazy">
+                <div class="photo-overlay">
+                  <span class="photo-date">{{ p.takenAt }}</span>
+                  <button class="photo-delete" (click)="$event.stopPropagation(); deletePhoto(p.photoId)" title="Eliminar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="photo-empty">Aún no has subido fotos. ¡Sube tu primera foto de progreso!</p>
+        }
+      </div>
+    }
+
+    @if (selectedPhoto(); as p) {
+      <div class="photo-viewer" (click)="selectedPhoto.set(null)">
+        <div class="photo-viewer-content" (click)="$event.stopPropagation()">
+          <button class="photo-viewer-close" (click)="selectedPhoto.set(null)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+          </button>
+          <img [src]="p.photoUrl" alt="Foto {{ p.takenAt }}">
+          <div class="photo-viewer-meta">
+            <span>{{ p.takenAt }}</span>
+            @if (p.angle) { <span>· {{ p.angle }}</span> }
+            <button class="photo-vis-btn" [class.group]="p.visibility === 'Group'" (click)="toggleVisibility(p)">
+              {{ p.visibility === 'Group' ? 'Visible para el grupo' : 'Solo yo' }}
+            </button>
+          </div>
+        </div>
+      </div>
     }
   </div>
   `,
@@ -122,11 +177,13 @@ import type { DayMacroBars } from '../../shared/components';
     .progress-title .italic { font-style: italic; color: var(--pine); }
     .progress-meta { font-size: 13px; color: var(--ink-light); margin-top: 8px; }
     .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-xl); padding: 20px; margin-bottom: 20px; }
-    .card-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .card-title { font-family: var(--display); font-size: 20px; font-weight: 400; letter-spacing: -0.01em; color: var(--ink); margin: 0; }
     .card-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: var(--r-pill); background: var(--cream); color: var(--ink-soft); }
     .card-badge.down { background: var(--mint-soft); color: var(--pine); }
     .card-badge.up { background: var(--coral-bg); color: var(--coral); }
+    .card-action { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--cream); font-size: 12px; font-weight: 600; color: var(--pine); cursor: pointer; transition: all 0.2s; }
+    .card-action:hover { background: var(--mint-soft); border-color: var(--mint); }
     .weight-current { font-family: var(--display); font-size: 36px; font-weight: 500; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 16px; }
     .weight-current .small { font-size: 18px; color: var(--ink-light); }
     .weight-compare { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-muted); border-top: 1px solid var(--line); padding-top: 12px; }
@@ -141,21 +198,47 @@ import type { DayMacroBars } from '../../shared/components';
     .macro-avg-item { display: flex; flex-direction: column; padding: 8px; border: 1px solid var(--line); border-radius: var(--r-md); }
     .ma-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-muted); }
     .ma-val { font-size: 13px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+    .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .photo-item { position: relative; aspect-ratio: 1; border-radius: var(--r-lg); overflow: hidden; cursor: pointer; background: var(--bg); }
+    .photo-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+    .photo-item:hover img { transform: scale(1.05); }
+    .photo-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px; background: linear-gradient(transparent, rgba(0,0,0,0.5)); display: flex; justify-content: space-between; align-items: flex-end; opacity: 0; transition: opacity 0.2s; }
+    .photo-item:hover .photo-overlay { opacity: 1; }
+    .photo-date { font-size: 10px; color: white; font-weight: 600; }
+    .photo-delete { width: 24px; height: 24px; border-radius: 50%; border: none; background: rgba(0,0,0,0.4); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .photo-delete:hover { background: var(--coral); }
+    .photo-empty { text-align: center; padding: 24px 0; font-size: 13px; color: var(--ink-muted); }
+    .photo-uploading { display: flex; align-items: center; gap: 10px; padding: 12px 0; font-size: 13px; color: var(--ink-muted); }
+    .spinner-sm { width: 20px; height: 20px; border: 2px solid var(--line); border-top-color: var(--pine); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+    .photo-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s; }
+    .photo-viewer-content { max-width: 500px; width: 100%; position: relative; }
+    .photo-viewer-content img { width: 100%; border-radius: var(--r-xl); }
+    .photo-viewer-close { position: absolute; top: -40px; right: 0; background: none; border: none; color: white; cursor: pointer; padding: 8px; }
+    .photo-viewer-meta { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: rgba(255,255,255,0.7); font-size: 13px; }
+    .photo-vis-btn { margin-left: auto; padding: 6px 14px; border-radius: var(--r-pill); border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .photo-vis-btn.group { background: var(--mint); border-color: var(--mint); color: var(--pine-darker); }
     .page-header { animation: slideDown 0.5s var(--ease-out); }
     .progress-hero { animation: slideUp 0.7s var(--ease-out) 0.05s both; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
   `]
 })
 export class ProgressPage implements OnInit {
   private readonly progressService = inject(ProgressService);
   private readonly planService = inject(PlanService);
+  private readonly toast = inject(NcToastService);
 
   readonly summary = signal<ProgressSummaryDto | null>(null);
   readonly rawWeightData = signal<WeightEntryDto[]>([]);
   readonly heatmapData = signal<CheckinDayDto[]>([]);
   readonly weeklyMacros = signal<WeeklyMacrosDto | null>(null);
   readonly planDayMacros = signal<DayMacroBars[]>([]);
+
+  readonly photos = signal<ProgressPhotoDto[]>([]);
+  readonly uploading = signal(false);
+  readonly selectedPhoto = signal<ProgressPhotoDto | null>(null);
 
   readonly chartPoints = computed<WeightChartPoint[]>(() =>
     this.rawWeightData().map(w => ({ date: w.date, weightKg: w.weightKg }))
@@ -181,6 +264,7 @@ export class ProgressPage implements OnInit {
     this.progressService.getWeightHistory().subscribe(w => this.rawWeightData.set(w));
     this.progressService.getCheckins().subscribe(d => this.heatmapData.set(d));
     this.progressService.getWeeklyMacros().subscribe(m => this.weeklyMacros.set(m));
+    this.progressService.getPhotos().subscribe(p => this.photos.set(p));
 
     this.planService.getCurrent().subscribe({
       next: (plan) => {
@@ -194,6 +278,65 @@ export class ProgressPage implements OnInit {
         }));
         this.planDayMacros.set(bars);
       },
+    });
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    const file = input.files[0];
+    const today = new Date().toISOString().split('T')[0];
+
+    this.uploading.set(true);
+    this.progressService.uploadPhoto(file, today).subscribe({
+      next: (result) => {
+        this.uploading.set(false);
+        this.photos.update(p => [{
+          photoId: result.photoId,
+          photoUrl: result.photoUrl,
+          storageKey: result.storageKey,
+          angle: null,
+          visibility: 'Private',
+          takenAt: result.takenAt,
+          createdAt: new Date().toISOString(),
+          fileSizeBytes: file.size,
+        }, ...p]);
+        this.toast.success('Foto subida exitosamente');
+        input.value = '';
+      },
+      error: () => {
+        this.uploading.set(false);
+        this.toast.error('Error al subir la foto');
+        input.value = '';
+      }
+    });
+  }
+
+  viewPhoto(photo: ProgressPhotoDto) {
+    this.selectedPhoto.set(photo);
+  }
+
+  deletePhoto(photoId: string) {
+    this.progressService.deletePhoto(photoId).subscribe({
+      next: () => {
+        this.photos.update(p => p.filter(x => x.photoId !== photoId));
+        this.selectedPhoto.update(cur => cur?.photoId === photoId ? null : cur);
+        this.toast.success('Foto eliminada');
+      },
+      error: () => this.toast.error('Error al eliminar la foto'),
+    });
+  }
+
+  toggleVisibility(photo: ProgressPhotoDto) {
+    const next = photo.visibility === 'Group' ? 'Private' : 'Group';
+    this.progressService.updatePhotoVisibility(photo.photoId, next).subscribe({
+      next: () => {
+        this.photos.update(p => p.map(x => x.photoId === photo.photoId ? { ...x, visibility: next } : x));
+        this.selectedPhoto.update(cur => cur?.photoId === photo.photoId ? { ...cur, visibility: next } : cur);
+        this.toast.success(next === 'Group' ? 'Foto visible para el grupo' : 'Foto privada');
+      },
+      error: () => this.toast.error('Error al cambiar visibilidad'),
     });
   }
 

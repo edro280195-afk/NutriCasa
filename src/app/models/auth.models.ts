@@ -23,6 +23,7 @@ export interface UserSummaryDto {
   email: string;
   emailVerified: boolean;
   onboardingComplete: boolean;
+  role: string;
 }
 
 export interface RefreshTokenRequest {
@@ -51,6 +52,7 @@ export interface UserProfile {
   email: string;
   emailVerified: boolean;
   onboardingComplete: boolean;
+  role: string;
   profilePhotoUrl?: string;
   gender?: string;
   birthDate?: string;

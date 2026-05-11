@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { Observable, tap, switchMap, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { ApiService, ApiException } from './api.service';
@@ -7,6 +7,19 @@ import {
   ForgotPasswordRequest, ResetPasswordRequest, RefreshTokenRequest,
   VerifyEmailRequest, AuthState
 } from '../models/auth.models';
+
+function decodeRoleFromToken(token: string): string {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return 'user';
+    const payload = JSON.parse(atob(parts[1]));
+    return payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+      || payload['role']
+      || 'user';
+  } catch {
+    return 'user';
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -18,6 +31,8 @@ export class AuthService {
     user: null,
     accessToken: null,
   });
+
+  readonly isAdmin = computed(() => this.state().user?.role === 'admin');
 
   constructor() {
     this.restoreSession();
@@ -51,12 +66,14 @@ export class AuthService {
       tap(res => {
         this.setSession(res);
         if (res.user) {
+          const role = decodeRoleFromToken(res.accessToken);
           const profile: UserProfile = {
             userId: res.user.userId,
             fullName: res.user.fullName,
             email: res.user.email,
             emailVerified: res.user.emailVerified,
             onboardingComplete: res.user.onboardingComplete,
+            role,
           };
           this.state.update(s => ({ ...s, user: profile }));
           localStorage.setItem('user', JSON.stringify(profile));
@@ -80,8 +97,11 @@ export class AuthService {
   loadProfile(): Observable<UserProfile> {
     return this.api.get<UserProfile>('/auth/me').pipe(
       tap(user => {
-        this.state.update(s => ({ ...s, user }));
-        localStorage.setItem('user', JSON.stringify(user));
+        const token = localStorage.getItem('accessToken');
+        const role = token ? decodeRoleFromToken(token) : 'user';
+        const profile = { ...user, role };
+        this.state.update(s => ({ ...s, user: profile }));
+        localStorage.setItem('user', JSON.stringify(profile));
       })
     );
   }
@@ -97,6 +117,7 @@ export class AuthService {
   private setSession(token: TokenResponse) {
     localStorage.setItem('accessToken', token.accessToken);
     localStorage.setItem('refreshToken', token.refreshToken);
+    const role = decodeRoleFromToken(token.accessToken);
     if (token.user) {
       const profile: UserProfile = {
         userId: token.user.userId,
@@ -104,6 +125,7 @@ export class AuthService {
         email: token.user.email,
         emailVerified: token.user.emailVerified,
         onboardingComplete: token.user.onboardingComplete,
+        role,
       };
       localStorage.setItem('user', JSON.stringify(profile));
       this.state.set({
@@ -132,7 +154,9 @@ export class AuthService {
     const accessToken = localStorage.getItem('accessToken');
     const userJson = localStorage.getItem('user');
     if (accessToken) {
-      const user = userJson ? JSON.parse(userJson) : null;
+      const role = decodeRoleFromToken(accessToken);
+      let user = userJson ? JSON.parse(userJson) : null;
+      if (user) user = { ...user, role };
       this.state.set({ isAuthenticated: true, user, accessToken });
     }
   }

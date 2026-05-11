@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, loginGuard, onboardingGuard, dashboardGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -39,7 +40,19 @@ export const routes: Routes = [
       { path: 'profile/medical', loadComponent: () => import('./pages/profile/medical-profile.page').then(c => c.MedicalProfilePage) },
       { path: 'profile/preferences', loadComponent: () => import('./pages/profile/preferences.page').then(c => c.PreferencesPage) },
       { path: 'profile/notifications', loadComponent: () => import('./pages/profile/notifications.page').then(c => c.NotificationsPage) },
+      { path: 'profile/subscription', loadComponent: () => import('./pages/profile/subscription.page').then(c => c.SubscriptionPage) },
       { path: 'profile/:section', loadComponent: () => import('./pages/profile/coming-soon.page').then(c => c.ComingSoonPage) },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
+  },
+  {
+    path: 'admin',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () => import('./layouts/admin-layout').then(c => c.AdminLayout),
+    children: [
+      { path: 'dashboard', loadComponent: () => import('./pages/admin/admin-dashboard.page').then(c => c.AdminDashboardPage) },
+      { path: 'users', loadComponent: () => import('./pages/admin/admin-users.page').then(c => c.AdminUsersPage) },
+      { path: 'posts', loadComponent: () => import('./pages/admin/admin-posts.page').then(c => c.AdminPostsPage) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

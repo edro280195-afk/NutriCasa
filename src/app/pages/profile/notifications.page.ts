@@ -1,7 +1,8 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NcPageHeaderComponent, NcLoadingComponent } from '../../shared/components';
 import { ProfileService } from '../../services/profile.service';
+import { PushNotificationService } from '../../services/push-notification.service';
 import type { PreferencesDto, UpdatePreferencesRequest } from '../../models/profile.models';
 
 @Component({
@@ -22,9 +23,15 @@ import type { PreferencesDto, UpdatePreferencesRequest } from '../../models/prof
 
         <label class="toggle-row">
           <span class="toggle-label">Notificaciones push</span>
-          <input type="checkbox" [(ngModel)]="data().allowPush" class="toggle-input" />
+          @if (pushStatus(); as ps) {
+            <span class="push-status" [class.active]="ps.subscribed">{{ ps.subscribed ? 'Suscrito' : 'No suscrito' }}</span>
+          }
+          <input type="checkbox" [checked]="data().allowPush" (change)="togglePush($any($event.target).checked)" class="toggle-input" [disabled]="pushBusy()" />
           <span class="toggle-slider"></span>
         </label>
+        @if (!pushSupported()) {
+          <p class="hint">Tu navegador no soporta notificaciones push.</p>
+        }
         <label class="toggle-row">
           <span class="toggle-label">Notificaciones por correo</span>
           <input type="checkbox" [(ngModel)]="data().allowEmail" class="toggle-input" />
@@ -81,6 +88,10 @@ import type { PreferencesDto, UpdatePreferencesRequest } from '../../models/prof
     .toggle-slider::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: var(--paper); border-radius: 50%; transition: transform 0.2s; }
     .toggle-input:checked + .toggle-slider { background: var(--mint); }
     .toggle-input:checked + .toggle-slider::after { transform: translateX(20px); }
+    .toggle-input:disabled + .toggle-slider { opacity: 0.5; }
+    .push-status { font-size: 10px; font-weight: 600; padding: 2px 10px; border-radius: var(--r-pill); background: var(--cream-warm); color: var(--ink-muted); }
+    .push-status.active { background: var(--mint-soft); color: var(--pine); }
+    .hint { font-size: 11px; color: var(--ink-muted); margin-top: 4px; width: 100%; }
     .quiet-row { display: flex; gap: 12px; }
     .quiet-label { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
     .form-input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--line); border-radius: var(--r-md); font-size: 14px; background: var(--paper); color: var(--ink); box-sizing: border-box; }
@@ -97,12 +108,17 @@ import type { PreferencesDto, UpdatePreferencesRequest } from '../../models/prof
 })
 export class NotificationsPage implements OnInit {
   private readonly svc = inject(ProfileService);
+  private readonly pushSvc = inject(PushNotificationService);
 
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly saveSuccess = signal(false);
   readonly saveError = signal<string | null>(null);
   readonly error = signal<string | null>(null);
+
+  readonly pushSupported = signal(this.pushSvc.isSupported);
+  readonly pushStatus = signal<{ subscribed: boolean; endpoint?: string }>({ subscribed: false });
+  readonly pushBusy = signal(false);
 
   readonly data = signal<PreferencesDto>({
     shareWeight: 'Private', shareBodyFat: 'Private', shareMeasurements: 'Private',
@@ -118,6 +134,52 @@ export class NotificationsPage implements OnInit {
       next: (p) => { this.data.set(p); this.loading.set(false); },
       error: (err) => { this.error.set(err?.error?.message || 'Error al cargar configuración'); this.loading.set(false); },
     });
+
+    if (this.pushSupported()) {
+      this.pushSvc.getSubscriptions().subscribe({
+        next: (subs) => {
+          if (subs.length > 0) {
+            this.pushStatus.set({ subscribed: true, endpoint: subs[0].endpoint });
+          }
+        },
+      });
+    }
+  }
+
+  async togglePush(enabled: boolean) {
+    this.data.update(d => ({ ...d, allowPush: enabled }));
+
+    if (!this.pushSupported()) return;
+
+    this.pushBusy.set(true);
+    try {
+      if (enabled) {
+        const sub = await this.pushSvc.requestSubscription().toPromise();
+        if (sub) {
+          const json = sub.toJSON();
+          await this.pushSvc.subscribeBackend(
+            json.endpoint!,
+            (json.keys as any).p256dh,
+            (json.keys as any).auth
+          ).toPromise();
+          this.pushStatus.set({ subscribed: true, endpoint: json.endpoint! });
+        }
+      } else {
+        const current = this.pushStatus();
+        if (current.endpoint) {
+          await this.pushSvc.unsubscribeBackend(current.endpoint).toPromise();
+        }
+        const browserSub = await this.pushSvc.subscription$.toPromise();
+        if (browserSub) {
+          await this.pushSvc.unsubscribe(browserSub).toPromise();
+        }
+        this.pushStatus.set({ subscribed: false });
+      }
+    } catch (err: any) {
+      this.pushStatus.set({ subscribed: false });
+      this.data.update(d => ({ ...d, allowPush: false }));
+    }
+    this.pushBusy.set(false);
   }
 
   save() {

@@ -27,5 +27,61 @@
         ]
       }
     }
+  ],
+  "dataGroups": [
+    {
+      "name": "api-plans",
+      "urls": ["/api/plans/current", "/api/plans/logs"],
+      "cacheConfig": {
+        "maxSize": 10,
+        "maxAge": "7d",
+        "strategy": "performance"
+      }
+    },
+    {
+      "name": "api-recipes",
+      "urls": ["/api/recipes/favorites"],
+      "cacheConfig": {
+        "maxSize": 10,
+        "maxAge": "7d",
+        "strategy": "performance"
+      }
+    },
+    {
+      "name": "api-progress",
+      "urls": ["/api/progress/photos"],
+      "cacheConfig": {
+        "maxSize": 10,
+        "maxAge": "7d",
+        "strategy": "performance"
+      }
+    },
+    {
+      "name": "api-family",
+      "urls": ["/api/family/data", "/api/family/leaderboard"],
+      "cacheConfig": {
+        "maxSize": 10,
+        "maxAge": "7d",
+        "strategy": "performance"
+      }
+    },
+    {
+      "name": "api-dashboard",
+      "urls": ["/api/dashboard/**"],
+      "cacheConfig": {
+        "maxSize": 10,
+        "maxAge": "1d",
+        "strategy": "performance"
+      }
+    },
+    {
+      "name": "api-notifications",
+      "urls": ["/api/notifications/**", "/api/push/**"],
+      "cacheConfig": {
+        "maxSize": 10,
+        "maxAge": "1h",
+        "strategy": "freshness"
+      }
+    }
   ]
 }

@@ -34,3 +34,21 @@ export interface MacroGoalDto {
   current: number;
   goal: number;
 }
+
+export interface ProgressPhotoDto {
+  photoId: string;
+  photoUrl: string;
+  storageKey: string;
+  angle: string | null;
+  visibility: string;
+  takenAt: string;
+  createdAt: string;
+  fileSizeBytes: number | null;
+}
+
+export interface UploadPhotoResultDto {
+  photoId: string;
+  photoUrl: string;
+  storageKey: string;
+  takenAt: string;
+}
