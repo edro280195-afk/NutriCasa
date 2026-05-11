@@ -5,7 +5,7 @@ import { FamilyService } from '../../services/family.service';
 import { AuthService } from '../../services/auth.service';
 import { TimeAgoPipe } from '../../pipes/time-ago.pipe';
 import { NcToastService } from '../../shared/components/nc-toast.service';
-import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto } from '../../models/family.models';
+import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, LeaderboardEntryDto } from '../../models/family.models';
 
 @Component({
   selector: 'app-family',
@@ -60,6 +60,52 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
           <div class="family-stat-value">{{ stats().adherencePercent }}%</div>
           <div class="family-stat-label">Adherencia</div>
         </div>
+      </div>
+
+      <div class="family-section">
+        <div class="section-head">
+          <h2 class="section-title">Leaderboard</h2>
+        </div>
+
+        <div class="lb-tabs">
+          @for (tab of leaderboardTabs; track tab.key) {
+            <button class="lb-tab" [class.active]="leaderboardCategory() === tab.key" (click)="switchLeaderboard(tab.key)">
+              {{ tab.label }}
+            </button>
+          }
+        </div>
+
+        @if (leaderboardLoading()) {
+          <div class="lb-loading">
+            <div class="spinner-sm"></div>
+          </div>
+        } @else {
+          <div class="lb-list">
+            @for (e of leaderboard().entries; track e.userId) {
+              <div class="lb-row">
+                <div class="lb-rank">
+                  @if (e.rank <= 3) {
+                    <span class="lb-rank-medal">{{ medalEmoji(e.rank) }}</span>
+                  } @else {
+                    <span class="lb-rank-num">#{{ e.rank }}</span>
+                  }
+                </div>
+                <div class="lb-av" [style.background]="getColor(e.userId)">
+                  {{ e.fullName.charAt(0) }}{{ e.fullName.split(' ').pop()?.charAt(0) }}
+                </div>
+                <div class="lb-info">
+                  <div class="lb-name">{{ e.fullName }}</div>
+                  <div class="lb-bar-track">
+                    <div class="lb-bar-fill" [style.width.%]="barWidth(e.value, leaderboard().entries)"></div>
+                  </div>
+                </div>
+                <div class="lb-value">{{ e.valueDisplay }}</div>
+              </div>
+            } @empty {
+              <p class="lb-empty">Sin datos para esta categoría. Los miembros deben aceptar compartir su información en privacidad.</p>
+            }
+          </div>
+        }
       </div>
 
       <div class="family-section">
@@ -217,6 +263,24 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
     .comment-send:disabled { opacity: 0.4; }
     .comment-send:not(:disabled):hover { background: var(--pine-darker); }
 
+    .lb-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .lb-tab { flex: 1; min-width: 0; padding: 8px 6px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--paper); font-size: 11px; font-weight: 600; color: var(--ink-muted); cursor: pointer; text-align: center; transition: all 0.2s; white-space: nowrap; }
+    .lb-tab.active { background: var(--pine); border-color: var(--pine); color: var(--cream); }
+    .lb-loading { text-align: center; padding: 24px; }
+    .spinner-sm { width: 24px; height: 24px; border: 2px solid var(--line); border-top-color: var(--pine); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+    .lb-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .lb-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); }
+    .lb-rank { width: 28px; text-align: center; flex-shrink: 0; }
+    .lb-rank-medal { font-size: 18px; }
+    .lb-rank-num { font-size: 12px; font-weight: 700; color: var(--ink-muted); }
+    .lb-av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--pine-darker); flex-shrink: 0; }
+    .lb-info { flex: 1; min-width: 0; }
+    .lb-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+    .lb-bar-track { height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+    .lb-bar-fill { height: 100%; background: var(--mint); border-radius: 2px; transition: width 0.4s var(--ease-out); }
+    .lb-value { font-size: 13px; font-weight: 700; color: var(--pine); white-space: nowrap; flex-shrink: 0; }
+    .lb-empty { text-align: center; padding: 24px 0; font-size: 12px; color: var(--ink-muted); line-height: 1.6; }
+
     .feed-empty { text-align: center; padding: 32px 0; font-size: 13px; color: var(--ink-muted); }
 
     .loading-state { text-align: center; padding: 60px 20px; }
@@ -252,9 +316,20 @@ export class FamilyPage implements OnInit, OnDestroy {
 
   readonly availableReactions = ['Like', 'Fire', 'Heart', 'Clap', 'Wow'];
 
+  readonly leaderboardCategory = signal('weight_loss');
+  readonly leaderboard = signal<GroupLeaderboardDto>({ category: '', categoryLabel: '', entries: [] });
+  readonly leaderboardLoading = signal(false);
+  readonly leaderboardTabs = [
+    { key: 'weight_loss', label: 'Peso' },
+    { key: 'streak', label: 'Racha' },
+    { key: 'adherence', label: 'Adherencia' },
+    { key: 'checkins', label: 'Check-ins' },
+  ];
+
   ngOnInit() {
     this.currentUserId.set(this.auth.state().user?.userId ?? null);
     this.loadData();
+    this.switchLeaderboard('weight_loss');
     this.connectSignalR();
   }
 
@@ -377,6 +452,25 @@ export class FamilyPage implements OnInit, OnDestroy {
       },
       error: () => this.toast.error('Error al eliminar comentario')
     });
+  }
+
+  switchLeaderboard(category: string) {
+    this.leaderboardCategory.set(category);
+    this.leaderboardLoading.set(true);
+    this.family.getLeaderboard(category).subscribe(d => {
+      this.leaderboard.set(d);
+      this.leaderboardLoading.set(false);
+    });
+  }
+
+  barWidth(value: number, entries: LeaderboardEntryDto[]): number {
+    if (entries.length === 0) return 0;
+    const max = Math.max(...entries.map(e => e.value));
+    return max > 0 ? (value / max) * 100 : 0;
+  }
+
+  medalEmoji(rank: number): string {
+    return rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
   }
 
   reactionEmoji(type: string): string {

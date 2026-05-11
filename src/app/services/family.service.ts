@@ -2,7 +2,7 @@ import { Injectable, inject, isDevMode } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto } from '../models/family.models';
+import { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto } from '../models/family.models';
 import * as signalR from '@microsoft/signalr';
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +35,10 @@ export class FamilyService {
 
   getStats(): Observable<FamilyStatsDto> {
     return this.api.get<FamilyStatsDto>('/family/stats');
+  }
+
+  getLeaderboard(category = 'weight_loss'): Observable<GroupLeaderboardDto> {
+    return this.api.get<GroupLeaderboardDto>(`/family/leaderboard?category=${category}`);
   }
 
   createPost(content: string, postType = 'UserText'): Observable<PostResultDto> {

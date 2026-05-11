@@ -63,3 +63,18 @@ export interface CommentResultDto {
   content: string;
   createdAt: string;
 }
+
+export interface GroupLeaderboardDto {
+  category: string;
+  categoryLabel: string;
+  entries: LeaderboardEntryDto[];
+}
+
+export interface LeaderboardEntryDto {
+  rank: number;
+  userId: string;
+  fullName: string;
+  value: number;
+  valueDisplay: string;
+  unit: string;
+}
