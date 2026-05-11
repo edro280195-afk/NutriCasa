@@ -1,13 +1,15 @@
 import { Component, inject, signal, computed } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { PlanService } from '../../services/plan.service';
 import { LottieAnimationComponent } from '../../components/lottie-animation/lottie-animation.component';
-import type { PlanGenerationResult, DayPlanDto } from '../../models/plan.models';
-
+import { NcToastService } from '../../shared/components/nc-toast.service';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import type { PlanGenerationResult, DayPlanDto, MealPlanDto, MealLogStatus } from '../../models/plan.models';
 
 @Component({
   selector: 'app-plan',
   standalone: true,
-  imports: [LottieAnimationComponent],
+  imports: [LottieAnimationComponent, DragDropModule, DecimalPipe],
   template: `
   <div class="dash">
     <div class="dash-header">
@@ -61,7 +63,7 @@ import type { PlanGenerationResult, DayPlanDto } from '../../models/plan.models'
 
       <div class="day-tabs">
         @for (day of p.days; track day.dayNumber; let i = $index) {
-          <button class="day-tab" [class.active]="selectedDay() === i" (click)="selectedDay.set(i)">
+          <button class="day-tab" [class.active]="selectedDay() === i" (click)="selectDay(i)">
             <span class="day-name">{{ getDayName(day.dayNumber) }}</span>
             <span class="day-cal">{{ day.dayTotals.calories }} kcal</span>
           </button>
@@ -76,24 +78,85 @@ import type { PlanGenerationResult, DayPlanDto } from '../../models/plan.models'
           <div class="dm-item"><span class="dm-label">Calorías</span><span class="dm-value">{{ day.dayTotals.calories }}</span></div>
         </div>
 
-        <div class="meals">
-          @for (meal of day.meals; track meal.planMealId) {
-            <div class="meal">
-              <div class="meal-thumb" [class]="'meal-thumb-' + getMealColor(meal.mealType)">
-                <svg viewBox="0 0 24 24"><path d="M12 2L8 6h2v8H6l4 4 4-4h-4V6h2L12 2z M3 22h18v-2H3v2z"/></svg>
-              </div>
-              <div class="meal-info">
-                <div class="meal-time">{{ getMealLabel(meal.mealType) }}</div>
-                <div class="meal-name">{{ meal.recipe.name }}</div>
-                <div class="meal-macros">
-                  <span class="kcal">{{ meal.recipe.calories }} kcal</span>
-                  <span class="prot">{{ meal.recipe.proteinGr }}g P</span>
-                  <span class="fat">{{ meal.recipe.fatGr }}g G</span>
+        <div cdkDropListGroup>
+          <div class="meals"
+            cdkDropList
+            [cdkDropListData]="day.meals"
+            (cdkDropListDropped)="onMealDropped($event, p.planId, day)"
+            [cdkDropListSortingDisabled]="true">
+            @for (meal of day.meals; track meal.planMealId; let i = $index) {
+              <div class="meal" cdkDrag [cdkDragData]="meal" [class.meal-locked]="meal.isLocked">
+                <div class="meal-drag-handle" cdkDragHandle>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="9" cy="19" r="2"/><circle cx="15" cy="19" r="2"/></svg>
+                </div>
+                <div class="meal-thumb" [class]="'meal-thumb-' + getMealColor(meal.mealType)" (click)="selectMeal(meal)">
+                  <svg viewBox="0 0 24 24"><path d="M12 2L8 6h2v8H6l4 4 4-4h-4V6h2L12 2z M3 22h18v-2H3v2z"/></svg>
+                </div>
+                <div class="meal-info" (click)="selectMeal(meal)">
+                  <div class="meal-time">{{ getMealLabel(meal.mealType) }}</div>
+                  <div class="meal-name">{{ meal.recipe.name }}</div>
+                  <div class="meal-macros">
+                    <span class="kcal">{{ meal.recipe.calories }} kcal</span>
+                    <span class="prot">{{ meal.recipe.proteinGr }}g P</span>
+                    <span class="fat">{{ meal.recipe.fatGr }}g G</span>
+                  </div>
+                </div>
+                <div class="meal-actions">
+                  @if (meal.isLocked) {
+                    <button class="lock-btn locked" (click)="toggleLock(p.planId, meal)" title="Desbloquear">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </button>
+                  } @else {
+                    <button class="lock-btn" (click)="toggleLock(p.planId, meal)" title="Bloquear">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </button>
+                  }
+                  @if (mealLogStatuses()[meal.planMealId]; as logStatus) {
+                    <span class="status-badge" [class]="'status-' + logStatus">{{ getStatusLabel(logStatus) }}</span>
+                  }
                 </div>
               </div>
-            </div>
-          }
+            }
+          </div>
         </div>
+
+        @if (p.shoppingList?.byStore?.length) {
+          @let sl = p.shoppingList!;
+          <details class="shopping-section" [open]="shoppingOpen()">
+            <summary class="shopping-header" (click)="$event.preventDefault(); shoppingOpen.update(v => !v)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              <div class="shopping-header-text">
+                <span class="shopping-header-title">Lista de compras</span>
+                <span class="shopping-header-cost">{{ '$' + sl.totalEstimatedMxn }} MXN</span>
+              </div>
+              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="shopping-body">
+              @for (store of sl.byStore; track store.storeCode) {
+                <div class="store-group">
+                  <div class="store-group-header">
+                    <span class="store-name">{{ store.storeName }}</span>
+                    <span class="store-subtotal">{{ '$' + store.subtotalMxn }} MXN</span>
+                  </div>
+                  <div class="store-items">
+                    @for (item of store.items; track item.ingredientName) {
+                      <label class="store-item">
+                        <input type="checkbox" class="store-check" [checked]="isChecked(store.storeCode, item.ingredientName)" (change)="toggleItem(store.storeCode, item.ingredientName)">
+                        <div class="store-item-info">
+                          <span class="store-item-name" [class.tagged]="isChecked(store.storeCode, item.ingredientName)">{{ item.ingredientName }}</span>
+                          <span class="store-item-amount">{{ item.totalAmount }} {{ item.unit }}</span>
+                        </div>
+                        <span class="store-item-cost">{{ '$' + item.estimatedCostMxn }}</span>
+                      </label>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </details>
+        }
       }
     } @else {
       <div class="empty-state">
@@ -108,6 +171,72 @@ import type { PlanGenerationResult, DayPlanDto } from '../../models/plan.models'
     }
   </div>
 
+  @if (selectedMeal(); as meal) {
+    <div class="drawer-overlay" (click)="closeDrawer()"></div>
+    <div class="meal-drawer">
+      <div class="drawer-header">
+        <h3 class="drawer-title">{{ getMealLabel(meal.mealType) }}</h3>
+        <button class="drawer-close" (click)="closeDrawer()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <h4 class="drawer-recipe">{{ meal.recipe.name }}</h4>
+
+      <div class="drawer-macros">
+        <div class="dm-row"><span>Calorías</span><strong>{{ meal.recipe.calories }} kcal</strong></div>
+        <div class="dm-row"><span>Proteína</span><strong>{{ meal.recipe.proteinGr }}g</strong></div>
+        <div class="dm-row"><span>Grasa</span><strong>{{ meal.recipe.fatGr }}g</strong></div>
+        <div class="dm-row"><span>Carbohidratos</span><strong>{{ meal.recipe.carbsGr }}g</strong></div>
+        <div class="dm-row"><span>Tiempo</span><strong>{{ meal.recipe.prepTimeMin + meal.recipe.cookTimeMin }} min</strong></div>
+        <div class="dm-row"><span>Costo</span><strong>{{ '$' + meal.recipe.estimatedCostMxn }} MXN</strong></div>
+      </div>
+
+      <details class="drawer-instructions">
+        <summary>Instrucciones</summary>
+        <p>{{ meal.recipe.instructions }}</p>
+      </details>
+
+      <div class="drawer-section">
+        <label class="drawer-label">Porción</label>
+        <div class="portion-row">
+          <input type="range" min="0.25" max="3" step="0.25" [value]="portionValue()" (input)="onPortionChange($event)" class="portion-slider">
+          <span class="portion-value">{{ portionValue() }}x</span>
+        </div>
+        <div class="portion-macros">
+          <span>{{ (meal.recipe.calories * portionValue()) | number:'1.0-0' }} kcal</span>
+          <span>{{ (meal.recipe.proteinGr * portionValue()) | number:'1.0-0' }}g P</span>
+          <span>{{ (meal.recipe.fatGr * portionValue()) | number:'1.0-0' }}g G</span>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <label class="drawer-label">Registrar comida</label>
+        <div class="log-options">
+          @for (opt of logOptions; track opt.value) {
+            <button class="log-btn" [class.active]="selectedLogStatus() === opt.value" (click)="logMeal(opt.value, plan()!.planId, meal)">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="drawer-actions">
+        <button class="btn-secondary" (click)="swapMeal(plan()!.planId, meal)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Cambiar esta comida
+        </button>
+        <button class="btn-secondary" (click)="toggleLock(plan()!.planId, meal)">
+          @if (meal.isLocked) {
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Desbloquear
+          } @else {
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Bloquear
+          }
+        </button>
+      </div>
+    </div>
+  }
   `,
   styles: [`
     :host { display: contents; }
@@ -116,7 +245,7 @@ import type { PlanGenerationResult, DayPlanDto } from '../../models/plan.models'
     .dash-brand { font-family: var(--display); font-size: 22px; font-weight: 500; color: var(--pine); display: flex; align-items: center; gap: 8px; }
     .dash-brand svg { width: 22px; height: 22px; fill: var(--mint); }
     .dash-actions { display: flex; gap: 10px; }
-    .icon-btn { width: 42px; height: 42px; background: var(--paper); border-radius: var(--r-pill); display: flex; align-items: center; justify-content: center; color: var(--ink); box-shadow: var(--shadow-sm); }
+    .icon-btn { width: 42px; height: 42px; background: var(--paper); border-radius: var(--r-pill); display: flex; align-items: center; justify-content: center; color: var(--ink); box-shadow: var(--shadow-sm); border: none; cursor: pointer; }
     .icon-btn:disabled { opacity: 0.5; }
     .greeting { margin-bottom: 22px; }
     .greeting-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mint); margin-bottom: 8px; }
@@ -125,15 +254,13 @@ import type { PlanGenerationResult, DayPlanDto } from '../../models/plan.models'
     .greeting-mode { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 5px 11px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-pill); font-size: 11px; font-weight: 600; color: var(--ink-soft); }
     .loading-state { text-align: center; padding: 60px 20px; }
     .loading-state p { font-size: 15px; color: var(--ink-soft); margin-top: 20px; }
-    .spinner-lg { width: 40px; height: 40px; border: 3px solid var(--line); border-top-color: var(--pine); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
-    @keyframes spin { to { transform: rotate(360deg); } }
     .savings-card { display: flex; gap: 14px; align-items: center; background: linear-gradient(135deg, var(--mint-soft), var(--cream-warm)); border: 1px solid var(--mint-light); border-radius: var(--r-lg); padding: 16px; margin-bottom: 20px; }
     .savings-icon { width: 44px; height: 44px; border-radius: 14px; background: var(--pine); color: var(--cream); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .savings-text { font-size: 13px; color: var(--ink-soft); }
     .savings-text strong { display: block; font-size: 14px; color: var(--ink); }
     .savings-amount { font-family: var(--display); font-size: 24px; font-weight: 500; color: var(--pine); display: block; margin: 2px 0; }
     .day-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; }
-    .day-tab { flex-shrink: 0; padding: 10px 14px; border: 1.5px solid var(--line); border-radius: var(--r-pill); background: var(--paper); text-align: center; transition: all 0.2s; }
+    .day-tab { flex-shrink: 0; padding: 10px 14px; border: 1.5px solid var(--line); border-radius: var(--r-pill); background: var(--paper); text-align: center; cursor: pointer; transition: all 0.2s; }
     .day-tab.active { border-color: var(--pine); background: var(--pine); color: var(--cream); }
     .day-name { display: block; font-size: 12px; font-weight: 600; }
     .day-cal { display: block; font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
@@ -142,45 +269,137 @@ import type { PlanGenerationResult, DayPlanDto } from '../../models/plan.models'
     .dm-item { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px; text-align: center; }
     .dm-label { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-muted); }
     .dm-value { display: block; font-family: var(--display); font-size: 20px; font-weight: 500; color: var(--ink); margin-top: 2px; }
-    .meals { display: flex; flex-direction: column; gap: 12px; }
-    .meal { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; display: flex; gap: 16px; align-items: center; }
-    .meal-thumb { width: 56px; height: 56px; border-radius: var(--r-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .meals { display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+    .meal { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px 12px 12px 8px; display: flex; gap: 12px; align-items: center; transition: box-shadow 0.2s; }
+    .meal:hover { box-shadow: var(--shadow-sm); }
+    .meal.meal-locked { opacity: 0.7; background: var(--cream); }
+    .meal.cdk-drag-preview { box-shadow: 0 5px 20px rgba(0,0,0,0.15); border-color: var(--mint); }
+    .meal.cdk-drag-placeholder { opacity: 0; }
+    .meal-drag-handle { cursor: grab; color: var(--ink-muted); display: flex; align-items: center; padding: 4px; flex-shrink: 0; }
+    .meal-drag-handle:active { cursor: grabbing; }
+    .meal-thumb { width: 48px; height: 48px; border-radius: var(--r-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     .meal-thumb-1 { background: linear-gradient(135deg, #F5C7B8, #E8866B); }
     .meal-thumb-2 { background: linear-gradient(135deg, #B5E2CB, #5BC096); }
     .meal-thumb-3 { background: linear-gradient(135deg, #B8DCEC, #5BA3D0); }
-    .meal-thumb svg { width: 28px; height: 28px; fill: rgba(255,255,255,0.85); }
-    .meal-info { flex: 1; min-width: 0; }
-    .meal-time { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
-    .meal-name { font-family: var(--display); font-size: 16px; font-weight: 500; color: var(--ink); margin-bottom: 6px; }
-    .meal-macros { display: flex; gap: 10px; font-size: 12px; color: var(--ink-light); }
+    .meal-thumb svg { width: 24px; height: 24px; fill: rgba(255,255,255,0.85); }
+    .meal-info { flex: 1; min-width: 0; cursor: pointer; }
+    .meal-time { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 2px; }
+    .meal-name { font-family: var(--display); font-size: 14px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .meal-macros { display: flex; gap: 8px; font-size: 11px; color: var(--ink-light); }
     .meal-macros span { display: inline-flex; align-items: center; gap: 4px; }
-    .meal-macros span::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+    .meal-macros span::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
     .meal-macros .kcal::before { background: var(--mint); }
     .meal-macros .prot::before { background: var(--lake); }
     .meal-macros .fat::before { background: var(--coral); }
+    .meal-actions { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+    .lock-btn { background: none; border: none; cursor: pointer; padding: 4px; color: var(--ink-muted); display: flex; align-items: center; }
+    .lock-btn.locked { color: var(--coral); }
+    .status-badge { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 7px; border-radius: var(--r-pill); }
+    .status-completed { background: var(--mint-soft); color: var(--pine); }
+    .status-partial { background: var(--cream-warm); color: var(--gold); }
+    .status-skipped { background: var(--coral-bg); color: var(--coral); }
+    .status-substituted { background: var(--lake-light); color: #2a6b8a; }
+    .shopping-section { margin-top: 24px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+    .shopping-header { display: flex; align-items: center; gap: 10px; padding: 16px; cursor: pointer; user-select: none; list-style: none; }
+    .shopping-header::-webkit-details-marker { display: none; }
+    .shopping-header svg:first-child { color: var(--mint); flex-shrink: 0; }
+    .shopping-header-text { flex: 1; min-width: 0; }
+    .shopping-header-title { display: block; font-size: 14px; font-weight: 700; color: var(--ink); }
+    .shopping-header-cost { font-family: var(--display); font-size: 20px; font-weight: 500; color: var(--pine); }
+    .chevron { transition: transform 0.25s var(--ease-out); color: var(--ink-muted); }
+    .shopping-section[open] .chevron { transform: rotate(180deg); }
+    .shopping-body { padding: 0 16px 16px; border-top: 1px solid var(--line); }
+    .store-group { margin-top: 16px; }
+    .store-group-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .store-name { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-soft); }
+    .store-subtotal { font-size: 13px; font-weight: 600; color: var(--pine); }
+    .store-items { display: flex; flex-direction: column; gap: 6px; }
+    .store-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-md); cursor: pointer; transition: background 0.15s; }
+    .store-item:hover { background: var(--cream); }
+    .store-check { width: 18px; height: 18px; accent-color: var(--pine); flex-shrink: 0; }
+    .store-item-info { flex: 1; min-width: 0; }
+    .store-item-name { display: block; font-size: 14px; font-weight: 600; color: var(--ink); }
+    .store-item-name.tagged { text-decoration: line-through; color: var(--ink-muted); }
+    .store-item-amount { display: block; font-size: 12px; color: var(--ink-light); margin-top: 2px; }
+    .store-item-cost { font-size: 13px; font-weight: 600; color: var(--ink-soft); flex-shrink: 0; }
     .empty-state { text-align: center; padding: 60px 20px; }
     .empty-state h3 { font-family: var(--display); font-size: 22px; font-weight: 400; color: var(--ink); margin: 16px 0 8px; }
     .empty-state p { font-size: 14px; color: var(--ink-light); margin-bottom: 24px; }
+
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(15,36,25,0.4); z-index: 99; animation: fadeIn 0.2s ease; }
+    .meal-drawer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; max-height: 80vh; background: var(--paper); border-radius: 24px 24px 0 0; padding: 20px 24px 32px; z-index: 100; overflow-y: auto; animation: slideUp 0.3s var(--ease-out); }
+    .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .drawer-title { font-family: var(--display); font-size: 14px; font-weight: 400; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.12em; }
+    .drawer-close { background: none; border: none; cursor: pointer; color: var(--ink-muted); padding: 4px; }
+    .drawer-recipe { font-family: var(--display); font-size: 22px; font-weight: 500; color: var(--ink); margin: 0 0 16px; }
+    .drawer-macros { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .dm-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .dm-row span { color: var(--ink-light); }
+    .dm-row strong { color: var(--ink); }
+    .drawer-instructions { margin-bottom: 16px; }
+    .drawer-instructions summary { font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; padding: 8px 0; }
+    .drawer-instructions p { font-size: 13px; color: var(--ink-light); line-height: 1.6; white-space: pre-line; }
+    .drawer-section { margin-bottom: 16px; }
+    .drawer-label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .portion-row { display: flex; align-items: center; gap: 12px; }
+    .portion-slider { flex: 1; accent-color: var(--pine); height: 6px; }
+    .portion-value { font-family: var(--display); font-size: 20px; font-weight: 500; color: var(--pine); min-width: 48px; text-align: right; }
+    .portion-macros { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; color: var(--ink-light); }
+    .log-options { display: flex; gap: 8px; }
+    .log-btn { flex: 1; padding: 10px 8px; border: 1.5px solid var(--line); border-radius: var(--r-pill); background: var(--paper); font-size: 12px; font-weight: 600; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; text-align: center; }
+    .log-btn.active { border-color: var(--pine); background: var(--pine); color: var(--cream); }
+    .log-btn:hover:not(.active) { border-color: var(--mint); }
+    .drawer-actions { display: flex; gap: 10px; margin-top: 8px; }
+    .btn-secondary { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border: 1.5px solid var(--line); border-radius: var(--r-pill); background: var(--paper); font-size: 13px; font-weight: 600; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+    .btn-secondary:hover { border-color: var(--mint); color: var(--pine); }
+    .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; border: none; border-radius: var(--r-pill); background: var(--pine); color: var(--cream); font-size: 15px; font-weight: 700; cursor: pointer; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
     .dash-header { animation: slideDown 0.5s var(--ease-out); }
     .greeting { animation: slideDown 0.6s var(--ease-out) 0.05s both; }
     .savings-card { animation: slideUp 0.7s var(--ease-out) 0.1s both; }
     .day-tabs { animation: slideUp 0.7s var(--ease-out) 0.15s both; }
     .day-macros { animation: slideUp 0.7s var(--ease-out) 0.2s both; }
     .meals { animation: slideUp 0.7s var(--ease-out) 0.25s both; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    .cdk-drag-preview {
+      box-sizing: border-box;
+      border-radius: var(--r-lg);
+      background: var(--paper);
+      border: 2px solid var(--mint);
+    }
+    .cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
+    .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
   `]
 })
 export class PlanPage {
   private readonly planService = inject(PlanService);
+  private readonly toast = inject(NcToastService);
 
   readonly plan = signal<PlanGenerationResult | null>(null);
   readonly generating = signal(false);
   readonly showSuccess = signal(false);
   readonly selectedDay = signal(0);
+  readonly shoppingOpen = signal(false);
+  readonly checkedItems = signal<Set<string>>(new Set());
+  readonly selectedMeal = signal<MealPlanDto | null>(null);
+  readonly selectedLogStatus = signal<MealLogStatus | null>(null);
+  readonly portionValue = signal(1);
+  readonly mealLogStatuses = signal<Record<string, MealLogStatus>>({});
+  readonly logging = signal(false);
+
+  private readonly storageKey = 'nutricasa_shopping_checked';
+
+  readonly logOptions: { value: MealLogStatus; label: string }[] = [
+    { value: 'completed', label: 'Completada' },
+    { value: 'partial', label: 'Parcial' },
+    { value: 'skipped', label: 'Saltada' },
+  ];
 
   constructor() {
     this.loadPlan();
+    this.loadCheckedState();
   }
 
   weekRange(): string {
@@ -197,6 +416,22 @@ export class PlanPage {
     return this.plan()?.days?.[this.selectedDay()] ?? null;
   });
 
+  selectDay(index: number) {
+    this.selectedDay.set(index);
+    this.closeDrawer();
+  }
+
+  selectMeal(meal: MealPlanDto) {
+    this.selectedMeal.set(meal);
+    this.selectedLogStatus.set(null);
+    this.portionValue.set(meal.portionMultiplier ?? 1);
+  }
+
+  closeDrawer() {
+    this.selectedMeal.set(null);
+    this.selectedLogStatus.set(null);
+  }
+
   generatePlan() {
     this.generating.set(true);
     this.showSuccess.set(false);
@@ -209,7 +444,7 @@ export class PlanPage {
         this.showSuccess.set(true);
         setTimeout(() => this.showSuccess.set(false), 2500);
       },
-      error: () => this.generating.set(false),
+      error: () => { this.generating.set(false); this.toast.error('Error al generar el plan'); },
     });
   }
 
@@ -217,6 +452,19 @@ export class PlanPage {
     this.planService.getCurrent().subscribe({
       next: (data) => {
         this.plan.set(data);
+        this.loadMealLogs(data);
+      },
+    });
+  }
+
+  private loadMealLogs(plan: PlanGenerationResult) {
+    this.planService.getMealLogs(plan.startDate, plan.endDate).subscribe({
+      next: (logs) => {
+        const statusMap: Record<string, MealLogStatus> = {};
+        for (const log of logs) {
+          if (log.planMealId) statusMap[log.planMealId] = log.status;
+        }
+        this.mealLogStatuses.set(statusMap);
       },
     });
   }
@@ -239,5 +487,123 @@ export class PlanPage {
   getMealColor(type: string): number {
     const map: Record<string, number> = { breakfast: 1, lunch: 2, dinner: 3, snack: 2 };
     return map[type] || 1;
+  }
+
+  getStatusLabel(status: MealLogStatus): string {
+    const map: Record<MealLogStatus, string> = {
+      completed: 'Hecho', partial: 'Parcial', skipped: 'Saltado', substituted: 'Sustituido',
+    };
+    return map[status] || status;
+  }
+
+  isChecked(storeCode: string, ingredient: string): boolean {
+    return this.checkedItems().has(`${storeCode}::${ingredient}`);
+  }
+
+  toggleItem(storeCode: string, ingredient: string) {
+    const key = `${storeCode}::${ingredient}`;
+    const next = new Set(this.checkedItems());
+    if (next.has(key)) next.delete(key); else next.add(key);
+    this.checkedItems.set(next);
+    localStorage.setItem(this.storageKey, JSON.stringify([...next]));
+  }
+
+  private loadCheckedState() {
+    try {
+      const saved = localStorage.getItem(this.storageKey);
+      if (saved) this.checkedItems.set(new Set(JSON.parse(saved)));
+    } catch { /* ignore */ }
+  }
+
+  logMeal(status: MealLogStatus, planId: string, meal: MealPlanDto) {
+    this.selectedLogStatus.set(status);
+    this.logging.set(true);
+    this.planService.logMeal(planId, meal.planMealId, { status, actualPortion: this.portionValue() }).subscribe({
+      next: () => {
+        this.mealLogStatuses.update(m => ({ ...m, [meal.planMealId]: status }));
+        this.logging.set(false);
+        this.toast.success(`Registrado: ${this.getMealLabel(meal.mealType)} — ${this.getStatusLabel(status)}`);
+        setTimeout(() => this.closeDrawer(), 600);
+      },
+      error: () => {
+        this.logging.set(false);
+        this.selectedLogStatus.set(null);
+        this.toast.error('Error al registrar la comida');
+      },
+    });
+  }
+
+  onMealDropped(event: CdkDragDrop<MealPlanDto[]>, planId: string, day: DayPlanDto) {
+    if (event.previousIndex === event.currentIndex) return;
+
+    const meals = day.meals;
+    const movedMeal = meals[event.previousIndex];
+    if (movedMeal.isLocked) {
+      this.toast.warning('Esta comida está bloqueada. Desbloquéala antes de moverla.');
+      return;
+    }
+
+    const moves = [];
+    const prevMeal = meals[event.previousIndex];
+    const currMeal = meals[event.currentIndex];
+
+    moves.push({
+      planMealId: prevMeal.planMealId,
+      newDayOfWeek: day.dayNumber,
+      newMealType: prevMeal.mealType,
+      rowVersion: prevMeal.rowVersion ?? 1,
+      newSortOrder: event.currentIndex + 1,
+    });
+
+    if (currMeal && !currMeal.isLocked) {
+      moves.push({
+        planMealId: currMeal.planMealId,
+        newDayOfWeek: day.dayNumber,
+        newMealType: currMeal.mealType,
+        rowVersion: currMeal.rowVersion ?? 1,
+        newSortOrder: event.previousIndex + 1,
+      });
+    }
+
+    moveItemInArray(meals, event.previousIndex, event.currentIndex);
+    this.planService.reorderMeals(planId, { moves }).subscribe({
+      error: () => {
+        moveItemInArray(meals, event.currentIndex, event.previousIndex);
+        this.toast.error('Conflicto al reordenar. Recargando...');
+        this.loadPlan();
+      },
+    });
+  }
+
+  toggleLock(planId: string, meal: MealPlanDto) {
+    const newLocked = !meal.isLocked;
+    meal.isLocked = newLocked;
+    this.planService.toggleLock(planId, meal.planMealId, { isLocked: newLocked }).subscribe({
+      error: () => {
+        meal.isLocked = !newLocked;
+        this.toast.error('Error al cambiar bloqueo');
+      },
+    });
+  }
+
+  onPortionChange(event: Event) {
+    const value = parseFloat((event.target as HTMLInputElement).value);
+    this.portionValue.set(value);
+  }
+
+  swapMeal(planId: string, meal: MealPlanDto) {
+    if (meal.isLocked) {
+      this.toast.warning('Desbloquea la comida antes de cambiarla.');
+      return;
+    }
+    this.toast.info('Generando nueva receta...');
+    this.planService.swapMeal(planId, meal.planMealId).subscribe({
+      next: () => {
+        this.toast.success('Comida sustituida con éxito');
+        this.closeDrawer();
+        this.loadPlan();
+      },
+      error: () => this.toast.error('Error al sustituir la comida'),
+    });
   }
 }

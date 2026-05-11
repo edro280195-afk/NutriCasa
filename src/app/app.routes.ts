@@ -13,6 +13,13 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'auth',
+    children: [
+      { path: 'reset-password', loadComponent: () => import('./pages/auth/reset-password.page').then(c => c.ResetPasswordPage) },
+      { path: 'verify-email', loadComponent: () => import('./pages/auth/verify-email.page').then(c => c.VerifyEmailPage) },
+    ],
+  },
+  {
     path: 'onboarding',
     canActivate: [authGuard, onboardingGuard],
     loadComponent: () => import('./pages/onboarding/onboarding.page').then(c => c.OnboardingPage),
@@ -27,6 +34,12 @@ export const routes: Routes = [
       { path: 'family', loadComponent: () => import('./pages/family/family.page').then(c => c.FamilyPage) },
       { path: 'progress', loadComponent: () => import('./pages/progress/progress.page').then(c => c.ProgressPage) },
       { path: 'profile', loadComponent: () => import('./pages/profile/profile.page').then(c => c.ProfilePage) },
+      { path: 'profile/metrics', loadComponent: () => import('./pages/profile/metrics.page').then(c => c.MetricsPage) },
+      { path: 'profile/family-group', loadComponent: () => import('./pages/profile/family-group.page').then(c => c.FamilyGroupPage) },
+      { path: 'profile/medical', loadComponent: () => import('./pages/profile/medical-profile.page').then(c => c.MedicalProfilePage) },
+      { path: 'profile/preferences', loadComponent: () => import('./pages/profile/preferences.page').then(c => c.PreferencesPage) },
+      { path: 'profile/notifications', loadComponent: () => import('./pages/profile/notifications.page').then(c => c.NotificationsPage) },
+      { path: 'profile/:section', loadComponent: () => import('./pages/profile/coming-soon.page').then(c => c.ComingSoonPage) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

@@ -29,6 +29,8 @@ export interface MealPlanDto {
   planMealId: string;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   isLocked: boolean;
+  portionMultiplier?: number;
+  rowVersion?: number;
   recipe: RecipeDto;
 }
 
@@ -92,4 +94,57 @@ export interface MacroProgress {
   percentage: number;
   label: string;
   unit: string;
+}
+
+/* Meal adherence */
+export type MealLogStatus = 'completed' | 'partial' | 'skipped' | 'substituted';
+
+export interface LogMealRequest {
+  status: MealLogStatus;
+  substitutionNote?: string;
+  actualPortion?: number;
+}
+
+export interface MealLogDto {
+  logId: string;
+  planMealId: string;
+  status: MealLogStatus;
+  substitutionNote?: string;
+  actualPortion?: number;
+  recipeName: string;
+  mealType: string;
+  loggedForDate: string;
+  loggedAt: string;
+}
+
+export interface MealAdherenceSummaryDto {
+  date: string;
+  totalMeals: number;
+  completedMeals: number;
+  partialMeals: number;
+  skippedMeals: number;
+  substitutedMeals: number;
+  adherencePercent: number;
+}
+
+/* Reorder */
+export interface MealMoveDto {
+  planMealId: string;
+  newDayOfWeek: number;
+  newMealType: string;
+  rowVersion: number;
+  newSortOrder: number;
+}
+
+export interface ReorderMealsRequest {
+  moves: MealMoveDto[];
+}
+
+/* Lock / Portion */
+export interface ToggleLockRequest {
+  isLocked: boolean;
+}
+
+export interface AdjustPortionRequest {
+  portionMultiplier: number;
 }

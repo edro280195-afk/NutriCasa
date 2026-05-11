@@ -1,12 +1,12 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [],
+  imports: [RouterLink],
   template: `
   <div class="page">
     <div class="page-header">
@@ -52,7 +52,7 @@ import { AuthService } from '../../services/auth.service';
     <div class="settings">
       <div class="settings-head">Ajustes</div>
 
-      <div class="settings-item">
+      <div class="settings-item" routerLink="/profile/metrics">
         <div class="si-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
         </div>
@@ -63,7 +63,7 @@ import { AuthService } from '../../services/auth.service';
         <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </div>
 
-      <div class="settings-item">
+      <div class="settings-item" routerLink="/profile/medical">
         <div class="si-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
         </div>
@@ -74,18 +74,18 @@ import { AuthService } from '../../services/auth.service';
         <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </div>
 
-      <div class="settings-item">
+      <div class="settings-item" routerLink="/profile/family-group">
         <div class="si-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
         <div class="si-content">
           <div class="si-title">Mi grupo familiar</div>
-          <div class="si-meta">Casa Rodríguez · 4 miembros</div>
+          <div class="si-meta">Miembros, racha, adherencia</div>
         </div>
         <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </div>
 
-      <div class="settings-item">
+      <div class="settings-item" routerLink="/profile/preferences">
         <div class="si-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </div>
@@ -96,7 +96,7 @@ import { AuthService } from '../../services/auth.service';
         <svg class="si-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </div>
 
-      <div class="settings-item">
+      <div class="settings-item" routerLink="/profile/notifications">
         <div class="si-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         </div>
@@ -242,18 +242,16 @@ export class ProfilePage {
 
   readonly user = this.auth.state;
 
+  initials(): string {
+    const name = this.user().user?.fullName || 'U';
+    return name.split(' ').map((s: string) => s[0]).join('').slice(0, 2).toUpperCase();
+  }
+
   get daysActive() {
     const lastLogin = this.user().user?.lastLoginAt;
     if (!lastLogin) return 0;
     const start = new Date(lastLogin);
     return Math.floor((Date.now() - start.getTime()) / 86400000) || 1;
-  }
-
-  get initials() {
-    return () => {
-      const name = this.user().user?.fullName || 'U';
-      return name.split(' ').map((s: string) => s[0]).join('').slice(0, 2).toUpperCase();
-    };
   }
 
   logout() {
