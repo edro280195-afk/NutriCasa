@@ -64,6 +64,12 @@ export interface CommentResultDto {
   createdAt: string;
 }
 
+export interface InviteCodeDto {
+  inviteCode: string;
+  deepLink: string;
+  isExpiringSoon: boolean;
+}
+
 export interface GroupLeaderboardDto {
   category: string;
   categoryLabel: string;

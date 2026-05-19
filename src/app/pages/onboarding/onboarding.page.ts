@@ -16,6 +16,11 @@ const STEPS = [
   'Actividad', 'Presupuesto', 'Perfil médico', 'Meta', 'Generando'
 ] as const;
 
+const OVERRIDE_STEPS = [
+  'Grupo', 'Datos básicos', 'Medidas', 'Tipo de cuerpo',
+  'Actividad', 'Presupuesto', 'Perfil médico', 'Override médico', 'Meta', 'Generando'
+] as const;
+
 @Component({
   selector: 'app-onboarding',
   standalone: true,
@@ -24,17 +29,17 @@ const STEPS = [
   <div class="shell">
     <div class="wiz-header">
       <div class="wiz-top">
-        <button class="wiz-back" [class.invisible]="step() === 0 || step() === STEPS.length - 1" (click)="prevStep()">
+        <button class="wiz-back" [class.invisible]="step() === 0 || step() === currentSteps().length - 1" (click)="prevStep()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
           </svg>
           Atrás
         </button>
-        <div class="wiz-step-counter">Paso <strong>{{ step() + 1 }}</strong> de {{ STEPS.length - 1 }}</div>
-        <button class="wiz-skip" [class.invisible]="step() === STEPS.length - 1" (click)="skipStep()">Omitir</button>
+        <div class="wiz-step-counter">Paso <strong>{{ step() + 1 }}</strong> de {{ currentSteps().length - 1 }}</div>
+        <button class="wiz-skip" [class.invisible]="step() === currentSteps().length - 1" (click)="skipStep()">Omitir</button>
       </div>
       <div class="wiz-progress">
-        <div class="wiz-progress-fill" [style.width.%]="((step() + 1) / STEPS.length) * 100"></div>
+        <div class="wiz-progress-fill" [style.width.%]="((step() + 1) / currentSteps().length) * 100"></div>
       </div>
     </div>
 
@@ -260,35 +265,86 @@ const STEPS = [
 
       <!-- STEP 6: Medical Profile -->
       <div class="wiz-step" [class.active]="step() === 6">
-        <div class="step-eyebrow">Paso 7 · Perfil médico</div>
-        <h2 class="step-title">Tu salud es <span class="italic">primero</span></h2>
-        <p class="step-subtitle">Selecciona cualquier condición o alergia para que ajustemos tu plan.</p>
-        <form [formGroup]="medicalForm">
-          <div class="field">
-            <label class="field-label">Condiciones de salud</label>
-            <div class="chip-grid">
-              @for (c of healthConditions; track c.value) {
-                <button type="button" class="chip" [class.selected]="isConditionSelected(c.value)" (click)="toggleCondition(c.value)">
-                  <span [innerHTML]="c.icon"></span> {{ c.label }}
-                </button>
+        @if (!requiresOverride()) {
+          <div class="step-eyebrow">Paso 7 · Perfil médico</div>
+          <h2 class="step-title">Tu salud es <span class="italic">primero</span></h2>
+          <p class="step-subtitle">Selecciona cualquier condición o alergia para que ajustemos tu plan.</p>
+          <form [formGroup]="medicalForm">
+            <div class="field">
+              <label class="field-label">Condiciones de salud</label>
+              <div class="chip-grid">
+                @for (c of healthConditions; track c.value) {
+                  <button type="button" class="chip" [class.selected]="isConditionSelected(c.value)" (click)="toggleCondition(c.value)">
+                    <span [innerHTML]="c.icon"></span> {{ c.label }}
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Alergias alimentarias</label>
+              <div class="chip-grid">
+                @for (a of allergies; track a) {
+                  <button type="button" class="chip" [class.selected]="isAllergySelected(a)" (click)="toggleAllergy(a)">{{ a }}</button>
+                }
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="medications">Medicamentos <span class="field-hint">(opcional)</span></label>
+              <div class="field-input-wrap">
+                <input id="medications" type="text" formControlName="medications" placeholder="Ej. Metformina, Losartán">
+              </div>
+            </div>
+          </form>
+        } @else {
+          <!-- STEP 6.5: Medical Override -->
+          <div class="step-eyebrow">Paso 7.5 · Verificación médica adicional</div>
+          <h2 class="step-title">Revisión <span class="italic">requerida</span></h2>
+          <p class="step-subtitle">Detectamos una condición que requiere verificación adicional. Confirma tu identidad y acepta el disclaimer para continuar.</p>
+
+          <div class="disclaimer-box override-warn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+              <strong>Condiciones detectadas</strong>
+              <p>Tu perfil contiene condiciones que requieren una revisión adicional de nuestra parte. Al continuar, confirmas que entiendes los riesgos y aceptas la responsabilidad.</p>
+            </div>
+          </div>
+
+          <form [formGroup]="overrideForm">
+            <div class="field">
+              <label class="field-label" for="overridePassword">Confirma tu contraseña</label>
+              <p style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">Esto constituye tu firma legal para aceptar este override médico.</p>
+              <div class="field-input-wrap">
+                <input id="overridePassword" type="password" formControlName="password" placeholder="••••••••">
+              </div>
+              @if (overrideForm.get('password')?.invalid && overrideForm.get('password')?.touched) {
+                <p style="font-size:12px;color:var(--ink-muted);margin-top:4px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  Ingresa tu contraseña para continuar
+                </p>
               }
             </div>
-          </div>
-          <div class="field">
-            <label class="field-label">Alergias alimentarias</label>
-            <div class="chip-grid">
-              @for (a of allergies; track a) {
-                <button type="button" class="chip" [class.selected]="isAllergySelected(a)" (click)="toggleAllergy(a)">{{ a }}</button>
-              }
+
+            <div class="field" style="display:flex;align-items:flex-start;gap:12px;margin-top:20px;">
+              <input type="checkbox" id="overrideDisclaimer" formControlName="disclaimerAccepted" style="width:20px;height:20px;margin-top:2px;accent-color:var(--pine);">
+              <label for="overrideDisclaimer" style="font-size:13px;color:var(--ink-light);cursor:pointer;">
+                Entiendo que mi condición requiere supervisión médica adicional y acepto que <strong>NutriCasa no sustituye la atención médica profesional</strong>. Asumo la responsabilidad de mi decisión.
+              </label>
             </div>
-          </div>
-          <div class="field">
-            <label class="field-label" for="medications">Medicamentos <span class="field-hint">(opcional)</span></label>
-            <div class="field-input-wrap">
-              <input id="medications" type="text" formControlName="medications" placeholder="Ej. Metformina, Losartán">
-            </div>
-          </div>
-        </form>
+            @if (!overrideForm.value.disclaimerAccepted && overrideSubmitAttempted()) {
+              <p style="font-size:12px;color:var(--ink-muted);margin-top:4px;padding-left:32px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Debes aceptar el disclaimer para continuar
+              </p>
+            }
+
+            @if (overrideError()) {
+              <div class="override-error">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                {{ overrideError() }}
+              </div>
+            }
+          </form>
+        }
       </div>
 
       <!-- STEP 7: Disclaimer + Goal -->
@@ -331,7 +387,7 @@ const STEPS = [
               Acepto los <a href="#" (click)="$event.preventDefault(); showTermsModal.set(true)" style="color:var(--pine);text-decoration:underline;font-weight:600;">términos de servicio</a> y el <a href="#" (click)="$event.preventDefault(); showPrivacyModal.set(true)" style="color:var(--pine);text-decoration:underline;font-weight:600;">aviso de privacidad</a>. Entiendo que este plan es informativo y no sustituye atención médica.
             </label>
           </div>
-          @if (step() === STEPS.length - 2 && !termsAccepted()) {
+          @if (step() === currentSteps().length - 2 && !termsAccepted()) {
             <p style="font-size:12px;color:var(--ink-muted);margin-top:-2px;padding-left:32px;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               Debes aceptar los términos para continuar
@@ -357,12 +413,20 @@ const STEPS = [
     </div>
 
     <div class="wiz-footer">
-      @if (step() < STEPS.length - 2) {
-        <button class="btn-primary" (click)="nextStep()">
-          Continuar
-          <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
-      } @else if (step() === STEPS.length - 2) {
+      @if (step() < currentSteps().length - 2) {
+        @if (step() === 6 && requiresOverride()) {
+          <button class="btn-primary" (click)="submitOverride()" [disabled]="!overrideForm.valid || submitting() || overrideSubmitted()">
+            @if (submitting()) { <span class="spinner"></span> }
+            Confirmar y continuar
+            <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        } @else {
+          <button class="btn-primary" (click)="nextStep()">
+            Continuar
+            <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        }
+      } @else if (step() === currentSteps().length - 2) {
         <button class="btn-primary" (click)="finishOnboarding()" [disabled]="!termsAccepted() || submitting()">
           @if (submitting()) { <span class="spinner"></span> }
           Comenzar mi viaje
@@ -650,6 +714,15 @@ const STEPS = [
     .modal-footer .btn-primary { width: 100%; justify-content: center; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .override-warn { background: var(--coral-bg) !important; border-left-color: var(--coral) !important; }
+    .override-warn strong { color: var(--coral) !important; }
+    .override-error {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; background: var(--coral-bg);
+      border-radius: var(--r-md); font-size: 13px; color: var(--coral);
+      margin-top: 16px;
+    }
   `]
 })
 export class OnboardingPage {
@@ -658,10 +731,19 @@ export class OnboardingPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  readonly STEPS = STEPS;
+  readonly OVERRIDE_STEPS = OVERRIDE_STEPS;
   readonly step = signal(0);
   readonly submitting = signal(false);
   readonly planDone = signal(false);
+
+  readonly requiresOverride = signal(false);
+  readonly overrideSubmitted = signal(false);
+  readonly overrideSubmitAttempted = signal(false);
+  readonly overrideError = signal('');
+
+  readonly currentSteps = computed(() =>
+    this.requiresOverride() ? OVERRIDE_STEPS : STEPS
+  );
 
   readonly groupAction = signal<'create' | 'join'>('create');
   readonly inviteCode = signal('');
@@ -685,6 +767,11 @@ export class OnboardingPage {
     conditions: [[] as string[]],
     allergies: [[] as string[]],
     medications: [''],
+  });
+
+  readonly overrideForm = this.fb.group({
+    password: ['', Validators.required],
+    disclaimerAccepted: [false, Validators.requiredTrue],
   });
 
   readonly goalForm = this.fb.group({
@@ -787,6 +874,7 @@ export class OnboardingPage {
       this.activityForm.valueChanges.subscribe(() => this.saveToStorage()),
       this.budgetForm.valueChanges.subscribe(() => this.saveToStorage()),
       this.medicalForm.valueChanges.subscribe(() => this.saveToStorage()),
+      this.overrideForm.valueChanges.subscribe(() => this.saveToStorage()),
       this.goalForm.valueChanges.subscribe(() => this.saveToStorage()),
     ];
   }
@@ -800,6 +888,7 @@ export class OnboardingPage {
       step: this.step(),
       groupAction: this.groupAction(),
       inviteCode: this.inviteCode(),
+      requiresOverride: this.requiresOverride(),
       selectedConditions: [...this.selectedConditions],
       selectedAllergies: [...this.selectedAllergies],
       basicForm: this.basicForm.value,
@@ -808,6 +897,7 @@ export class OnboardingPage {
       activityForm: this.activityForm.value,
       budgetForm: this.budgetForm.value,
       medicalForm: this.medicalForm.value,
+      overrideForm: this.overrideForm.value,
       goalForm: this.goalForm.value,
     };
     try { localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data)); } catch {}
@@ -823,6 +913,7 @@ export class OnboardingPage {
     if (!data) return;
 
     this.step.set(typeof data.step === 'number' ? data.step : 0);
+    if (data.requiresOverride) this.requiresOverride.set(true);
     if (data.groupAction === 'create' || data.groupAction === 'join') this.groupAction.set(data.groupAction);
     if (typeof data.inviteCode === 'string') this.inviteCode.set(data.inviteCode);
 
@@ -839,6 +930,7 @@ export class OnboardingPage {
     if (data.activityForm) this.activityForm.patchValue(data.activityForm, { emitEvent: false });
     if (data.budgetForm) this.budgetForm.patchValue(data.budgetForm, { emitEvent: false });
     if (data.medicalForm) this.medicalForm.patchValue(data.medicalForm, { emitEvent: false });
+    if (data.overrideForm) this.overrideForm.patchValue(data.overrideForm, { emitEvent: false });
     if (data.goalForm) this.goalForm.patchValue(data.goalForm, { emitEvent: false });
   }
 
@@ -856,8 +948,14 @@ export class OnboardingPage {
   }
 
   nextStep() {
-    if (this.step() >= STEPS.length - 2) return;
+    if (this.step() >= this.currentSteps().length - 2) return;
     if (!this.isStepValid()) return;
+
+    if (this.step() === 6) {
+      this.submitMedicalAndCheckOverride();
+      return;
+    }
+
     this.submitCurrentStep();
     this.step.update(s => s + 1);
     window.scrollTo(0, 0);
@@ -886,10 +984,55 @@ export class OnboardingPage {
   }
 
   skipStep() {
-    if (this.step() < STEPS.length - 2) {
+    if (this.step() < this.currentSteps().length - 2) {
       this.step.update(s => s + 1);
       window.scrollTo(0, 0);
     }
+  }
+
+  private submitMedicalAndCheckOverride() {
+    const req = this.buildMedicalRequest();
+    this.submitting.set(true);
+    this.onboarding.completeStep6MedicalProfile(req).subscribe({
+      next: (res) => {
+        this.submitting.set(false);
+        if (res.requiresOverride) {
+          this.requiresOverride.set(true);
+        } else {
+          this.requiresOverride.set(false);
+          this.step.update(s => s + 1);
+          window.scrollTo(0, 0);
+        }
+      },
+      error: () => {
+        this.submitting.set(false);
+      }
+    });
+  }
+
+  submitOverride() {
+    if (this.overrideForm.invalid) {
+      this.overrideSubmitAttempted.set(true);
+      return;
+    }
+    this.submitting.set(true);
+    this.overrideError.set('');
+    this.onboarding.completeStep6Override({
+      passwordConfirmation: this.overrideForm.value.password!,
+      disclaimerAccepted: true,
+      disclaimerVersionId: '00000000-0000-0000-0000-000000000000',
+    }).subscribe({
+      next: () => {
+        this.overrideSubmitted.set(true);
+        this.submitting.set(false);
+        this.step.update(s => s + 1);
+        window.scrollTo(0, 0);
+      },
+      error: (err) => {
+        this.submitting.set(false);
+        this.overrideError.set('Error al procesar la confirmación. Verifica tu contraseña e intenta de nuevo.');
+      }
+    });
   }
 
   private submitCurrentStep() {
@@ -901,7 +1044,7 @@ export class OnboardingPage {
       case 3: this.submitBodyType(); break;
       case 4: this.submitActivity(); break;
       case 5: this.submitBudgetMode(); break;
-      case 6: this.submitMedical(); break;
+      case 6: break; // handled by submitMedicalAndCheckOverride
     }
   }
 
@@ -947,7 +1090,7 @@ export class OnboardingPage {
     this.onboarding.completeStep5BudgetMode({ budgetModeCode: this.mapBudgetModeId(mode) }).subscribe();
   }
 
-  private submitMedical() {
+  private buildMedicalRequest(): MedicalProfileRequest {
     const req: MedicalProfileRequest = {
       allergies: [...this.selectedAllergies],
       medications: this.medicalForm.value.medications ? [this.medicalForm.value.medications] : [],
@@ -969,7 +1112,7 @@ export class OnboardingPage {
         case 'eatingDisorder': req.hasEatingDisorderHistory = true; break;
       }
     }
-    this.onboarding.completeStep6MedicalProfile(req).subscribe();
+    return req;
   }
 
   finishOnboarding() {
@@ -987,7 +1130,7 @@ export class OnboardingPage {
       next: () => {
         this.auth.loadProfile().subscribe(() => {
           this.submitting.set(false);
-          this.step.set(STEPS.length - 1);
+          this.step.set(this.currentSteps().length - 1);
           try { localStorage.removeItem(this.STORAGE_KEY); } catch {}
           setTimeout(() => {
             this.planDone.set(true);

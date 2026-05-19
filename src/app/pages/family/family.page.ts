@@ -3,9 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FamilyService } from '../../services/family.service';
 import { AuthService } from '../../services/auth.service';
+import { ShoppingListService } from '../../services/shopping-list.service';
 import { TimeAgoPipe } from '../../pipes/time-ago.pipe';
 import { NcToastService } from '../../shared/components/nc-toast.service';
-import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, LeaderboardEntryDto } from '../../models/family.models';
+import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, LeaderboardEntryDto, InviteCodeDto } from '../../models/family.models';
+import type { ShoppingListDto } from '../../models/shopping-list.models';
 
 @Component({
   selector: 'app-family',
@@ -46,6 +48,26 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
           }
         </div>
       </div>
+
+      @if (inviteCode(); as ic) {
+        <div class="invite-card">
+          <div class="invite-label">Código de invitación</div>
+          <div class="invite-row">
+            <code class="invite-code">{{ ic.inviteCode }}</code>
+            <button class="btn-sm" (click)="copyInviteCode(ic.inviteCode)">
+              {{ copied() ? 'Copiado' : 'Copiar' }}
+            </button>
+            <button class="btn-sm btn-outline" (click)="refreshInviteCode()" [disabled]="refreshing()">
+              {{ refreshing() ? '...' : 'Renovar' }}
+            </button>
+          </div>
+          @if (ic.isExpiringSoon) {
+            <p class="invite-warn">El código expira pronto. Renueva para generar uno nuevo.</p>
+          }
+        </div>
+      } @else {
+        <button class="btn-link" (click)="loadInviteCode()">Mostrar código de invitación</button>
+      }
 
       <div class="family-stats">
         <div class="family-stat">
@@ -104,6 +126,96 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
             } @empty {
               <p class="lb-empty">Sin datos para esta categoría. Los miembros deben aceptar compartir su información en privacidad.</p>
             }
+          </div>
+        }
+      </div>
+
+      @if (currentMemberRole() === 'owner' || currentMemberRole() === 'admin') {
+        <div class="family-section">
+          <div class="section-head">
+            <h2 class="section-title">Miembros</h2>
+          </div>
+          <div class="member-list">
+            @for (m of members(); track m.userId) {
+              <div class="member-row">
+                <div class="member-av" [style.background]="getColor(m.userId)">{{ m.fullName.charAt(0) }}</div>
+                <div class="member-info">
+                  <span class="member-name">{{ m.fullName }}</span>
+                  <span class="member-role">{{ roleLabel(m.role) }}</span>
+                </div>
+                @if (m.userId !== currentUserId()) {
+                  <div class="member-actions">
+                    @if (m.role !== 'owner' && m.role !== 'pending') {
+                      <select class="member-role-select" [value]="m.role" (change)="onRoleChange(m.userId, $any($event.target).value)">
+                        <option value="member">Miembro</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    }
+                    @if (m.role === 'owner') {
+                      <button class="btn-sm btn-outline" (click)="showTransfer()">Transferir</button>
+                    }
+                    @if (m.role !== 'owner') {
+                      <button class="btn-remove" (click)="confirmRemoveMember(m)" title="Remover del grupo">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+          <button class="btn-link" (click)="showCreateSubgroup.set(true)">+ Crear subgrupo</button>
+        </div>
+      }
+
+      <div class="family-section">
+        <div class="section-head">
+          <h2 class="section-title">Lista de compras</h2>
+          <button class="btn-sm" (click)="loadShoppingList()" [disabled]="shoppingListLoading()">
+            {{ shoppingListLoading() ? 'Cargando...' : 'Actualizar' }}
+          </button>
+        </div>
+
+        @if (shoppingListLoading()) {
+          <div class="lb-loading"><div class="spinner-sm"></div></div>
+        } @else if (shoppingList(); as sl) {
+          @if (sl.items.length > 0) {
+            <div class="sl-card">
+              @for (item of sl.items; track item.itemId) {
+                <div class="sl-item" [class.purchased]="item.isPurchased">
+                  <button class="sl-check" (click)="toggleItem(item.itemId)" [class.checked]="item.isPurchased">
+                    @if (item.isPurchased) {
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                    }
+                  </button>
+                  <span class="sl-name">{{ item.ingredientName }}</span>
+                  <span class="sl-amount">{{ item.totalAmount }} {{ item.unit }}</span>
+                  @if (item.estimatedCostMxn) {
+                    <span class="sl-cost">{{ '$' }}{{ item.estimatedCostMxn }}</span>
+                  }
+                </div>
+              }
+              @if (sl.totalCost) {
+                <div class="sl-total">Total estimado: <strong>{{ '$' }}{{ sl.totalCost }} MXN</strong></div>
+              }
+              <div class="sl-actions">
+                <button class="btn-sm" (click)="shareWhatsApp(sl)">Compartir en WhatsApp</button>
+              </div>
+            </div>
+          } @else {
+            <div class="sl-empty">
+              <p>Aún no hay lista de compras para esta semana.</p>
+              <button class="btn-primary" (click)="generateShoppingList()" [disabled]="generatingList()">
+                {{ generatingList() ? 'Generando...' : 'Generar lista' }}
+              </button>
+            </div>
+          }
+        } @else {
+          <div class="sl-empty">
+            <p>Aún no hay lista de compras para esta semana.</p>
+            <button class="btn-primary" (click)="generateShoppingList()" [disabled]="generatingList()">
+              {{ generatingList() ? 'Generando...' : 'Generar lista' }}
+            </button>
           </div>
         }
       </div>
@@ -187,6 +299,59 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
           }
         </div>
       </div>
+
+      @if (showCreateSubgroup()) {
+        <div class="modal-backdrop" (click)="showCreateSubgroup.set(false)">
+          <div class="modal-card" (click)="$event.stopPropagation()">
+            <h3 class="modal-title">Crear subgrupo</h3>
+            <input class="modal-input" [(ngModel)]="subgroupName" placeholder="Nombre del subgrupo" maxlength="100">
+            <textarea class="modal-input modal-textarea" [(ngModel)]="subgroupDescription" placeholder="Descripción (opcional)" rows="3"></textarea>
+            <div class="modal-actions">
+              <button class="btn-ghost" (click)="showCreateSubgroup.set(false)">Cancelar</button>
+              <button class="btn-primary" (click)="onCreateSubgroup()" [disabled]="!subgroupName().trim() || creatingSubgroup()">
+                {{ creatingSubgroup() ? 'Creando...' : 'Crear' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (showTransferModal()) {
+        <div class="modal-backdrop" (click)="showTransferModal.set(false)">
+          <div class="modal-card" (click)="$event.stopPropagation()">
+            <h3 class="modal-title">Transferir propiedad</h3>
+            <p class="modal-desc">Selecciona el nuevo owner del grupo. Tu rol cambiará a admin.</p>
+            <select class="modal-input" [(ngModel)]="transferTargetUserId">
+              @for (m of members(); track m.userId) {
+                @if (m.role !== 'owner') {
+                  <option [value]="m.userId">{{ m.fullName }}</option>
+                }
+              }
+            </select>
+            <div class="modal-actions">
+              <button class="btn-ghost" (click)="showTransferModal.set(false)">Cancelar</button>
+              <button class="btn-primary" (click)="onTransfer()" [disabled]="!transferTargetUserId() || transferring()">
+                {{ transferring() ? 'Transfiriendo...' : 'Transferir' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (removeTarget(); as rt) {
+        <div class="modal-backdrop" (click)="removeTarget.set(null)">
+          <div class="modal-card" (click)="$event.stopPropagation()">
+            <h3 class="modal-title">Remover miembro</h3>
+            <p class="modal-desc">¿Estás seguro de remover a <strong>{{ rt.fullName }}</strong> del grupo?</p>
+            <div class="modal-actions">
+              <button class="btn-ghost" (click)="removeTarget.set(null)">Cancelar</button>
+              <button class="btn-coral" (click)="onRemoveMember()" [disabled]="removing()">
+                {{ removing() ? 'Removiendo...' : 'Remover' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     }
   </div>
   `,
@@ -200,7 +365,7 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
     .connection-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-soft); transition: background 0.3s; }
     .connection-dot.online { background: var(--mint); box-shadow: 0 0 6px var(--mint); }
 
-    .family-hero { background: var(--pine); color: var(--cream); border-radius: var(--r-xl); padding: 24px; margin-bottom: 20px; position: relative; overflow: hidden; }
+    .family-hero { background: var(--pine); color: var(--cream); border-radius: var(--r-xl); padding: 24px; margin-bottom: 12px; position: relative; overflow: hidden; }
     .family-hero::before { content: ''; position: absolute; top: -40px; right: -30px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(91,192,150,0.15), transparent 70%); border-radius: 50%; }
     .family-hero-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; background: rgba(91,192,150,0.2); color: var(--mint-light); padding: 4px 10px; border-radius: var(--r-pill); margin-bottom: 12px; position: relative; }
     .family-hero-title { font-family: var(--display); font-size: 28px; font-weight: 400; letter-spacing: -0.01em; margin-bottom: 6px; position: relative; }
@@ -213,6 +378,18 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
     .fh-av-check { position: absolute; bottom: -2px; right: -2px; width: 16px; height: 16px; background: var(--mint); border-radius: 50%; border: 2px solid var(--pine); }
     .fh-av-check::after { content: ''; position: absolute; left: 4px; top: 2px; width: 4px; height: 7px; border: solid var(--pine-darker); border-width: 0 2px 2px 0; transform: rotate(45deg); }
 
+    .invite-card { background: var(--paper); border: 1px solid var(--mint); border-radius: var(--r-lg); padding: 14px; margin-bottom: 16px; }
+    .invite-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); margin-bottom: 8px; }
+    .invite-row { display: flex; gap: 8px; align-items: center; }
+    .invite-code { flex: 1; font-size: 16px; font-weight: 700; color: var(--pine); letter-spacing: 0.08em; background: var(--bg); padding: 8px 12px; border-radius: var(--r-md); }
+    .invite-warn { font-size: 11px; color: var(--coral); margin-top: 8px; }
+    .btn-link { background: none; border: none; color: var(--mint); font-size: 13px; cursor: pointer; padding: 8px 0; display: block; margin-bottom: 12px; text-decoration: underline; }
+    .btn-sm { background: var(--pine); color: var(--cream); border: none; padding: 6px 14px; border-radius: var(--r-pill); font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-sm:disabled { opacity: 0.4; }
+    .btn-outline { background: transparent; border: 1px solid var(--pine); color: var(--pine); }
+    .btn-coral { background: var(--coral); color: white; border: none; padding: 8px 20px; border-radius: var(--r-pill); font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 8px 20px; border-radius: var(--r-pill); font-size: 13px; font-weight: 600; cursor: pointer; }
+
     .family-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
     .family-stat { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; text-align: center; }
     .family-stat-value { font-family: var(--display); font-size: 28px; font-weight: 500; color: var(--pine); line-height: 1; }
@@ -220,6 +397,31 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
 
     .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
     .section-title { font-family: var(--display); font-size: 20px; font-weight: 400; letter-spacing: -0.01em; color: var(--ink); }
+
+    .member-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .member-row { display: flex; align-items: center; gap: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 10px 12px; }
+    .member-av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--pine-darker); flex-shrink: 0; }
+    .member-info { flex: 1; }
+    .member-name { font-size: 13px; font-weight: 600; color: var(--ink); display: block; }
+    .member-role { font-size: 11px; color: var(--ink-muted); }
+    .member-actions { display: flex; gap: 6px; align-items: center; }
+    .member-role-select { font-size: 11px; padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); color: var(--ink); cursor: pointer; }
+    .btn-remove { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .btn-remove:hover { background: var(--bg); color: var(--coral); }
+
+    .sl-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; margin-bottom: 16px; }
+    .sl-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .sl-item.purchased { opacity: 0.5; }
+    .sl-item.purchased .sl-name { text-decoration: line-through; }
+    .sl-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--mint); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--cream); transition: all 0.15s; }
+    .sl-check.checked { background: var(--mint); }
+    .sl-name { flex: 1; color: var(--ink); }
+    .sl-amount { font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
+    .sl-cost { font-size: 12px; color: var(--pine); font-weight: 600; white-space: nowrap; }
+    .sl-total { text-align: right; padding-top: 10px; font-size: 13px; color: var(--ink); }
+    .sl-actions { margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end; }
+    .sl-empty { text-align: center; padding: 20px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); margin-bottom: 16px; }
+    .sl-empty p { font-size: 13px; color: var(--ink-muted); margin-bottom: 12px; }
 
     .composer { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; margin-bottom: 16px; }
     .composer-input { width: 100%; border: none; background: transparent; resize: none; font-family: inherit; font-size: 14px; color: var(--ink); outline: none; line-height: 1.5; }
@@ -288,11 +490,22 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
     .spinner-lg { width: 40px; height: 40px; border: 3px solid var(--line); border-top-color: var(--pine); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-card { background: var(--paper); border-radius: var(--r-xl); padding: 24px; max-width: 400px; width: 100%; }
+    .modal-title { font-family: var(--display); font-size: 20px; font-weight: 500; color: var(--pine); margin-bottom: 16px; }
+    .modal-desc { font-size: 13px; color: var(--ink-muted); line-height: 1.6; margin-bottom: 16px; }
+    .modal-input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); font-family: inherit; font-size: 14px; color: var(--ink); background: var(--paper); margin-bottom: 12px; outline: none; }
+    .modal-input:focus { border-color: var(--mint); }
+    .modal-textarea { resize: vertical; min-height: 60px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+
     .page-header { animation: slideDown 0.5s var(--ease-out); }
     .family-hero { animation: slideUp 0.7s var(--ease-out) 0.05s both; }
     .family-stats { animation: slideUp 0.7s var(--ease-out) 0.1s both; }
     .family-section:nth-of-type(1) { animation: slideUp 0.7s var(--ease-out) 0.15s both; }
     .family-section:nth-of-type(2) { animation: slideUp 0.7s var(--ease-out) 0.2s both; }
+    .family-section:nth-of-type(3) { animation: slideUp 0.7s var(--ease-out) 0.25s both; }
+    .family-section:nth-of-type(4) { animation: slideUp 0.7s var(--ease-out) 0.3s both; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
   `]
@@ -300,6 +513,7 @@ import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, Rea
 export class FamilyPage implements OnInit, OnDestroy {
   private readonly family = inject(FamilyService);
   private readonly auth = inject(AuthService);
+  private readonly shoppingListService = inject(ShoppingListService);
   private readonly toast = inject(NcToastService);
   private subs: Subscription[] = [];
 
@@ -312,6 +526,7 @@ export class FamilyPage implements OnInit, OnDestroy {
   readonly newPostContent = signal('');
 
   readonly currentUserId = signal<string | null>(null);
+  readonly currentMemberRole = signal<string>('');
   readonly commentText: Record<string, string> = {};
 
   readonly availableReactions = ['Like', 'Fire', 'Heart', 'Clap', 'Wow'];
@@ -326,6 +541,25 @@ export class FamilyPage implements OnInit, OnDestroy {
     { key: 'checkins', label: 'Check-ins' },
   ];
 
+  // Group management
+  readonly inviteCode = signal<InviteCodeDto | null>(null);
+  readonly copied = signal(false);
+  readonly refreshing = signal(false);
+  readonly showCreateSubgroup = signal(false);
+  readonly subgroupName = signal('');
+  readonly subgroupDescription = signal('');
+  readonly creatingSubgroup = signal(false);
+  readonly showTransferModal = signal(false);
+  readonly transferTargetUserId = signal('');
+  readonly transferring = signal(false);
+  readonly removeTarget = signal<{ userId: string; fullName: string } | null>(null);
+  readonly removing = signal(false);
+
+  // Shopping list
+  readonly shoppingList = signal<ShoppingListDto | null>(null);
+  readonly shoppingListLoading = signal(false);
+  readonly generatingList = signal(false);
+
   ngOnInit() {
     this.currentUserId.set(this.auth.state().user?.userId ?? null);
     this.loadData();
@@ -339,9 +573,14 @@ export class FamilyPage implements OnInit, OnDestroy {
   }
 
   private loadData() {
-    this.family.getMembers().subscribe(m => this.members.set(m));
+    this.family.getMembers().subscribe(m => {
+      this.members.set(m);
+      const me = m.find(x => x.userId === this.currentUserId());
+      this.currentMemberRole.set(me?.role ?? '');
+    });
     this.family.getFeed().subscribe(f => this.feed.set(f));
     this.family.getStats().subscribe(s => { this.stats.set(s); this.loading.set(false); });
+    this.loadShoppingList();
   }
 
   private async connectSignalR() {
@@ -463,6 +702,174 @@ export class FamilyPage implements OnInit, OnDestroy {
     });
   }
 
+  // ── Invite Code ──
+
+  loadInviteCode() {
+    this.family.getInviteCode().subscribe(ic => this.inviteCode.set(ic));
+  }
+
+  copyInviteCode(code: string) {
+    navigator.clipboard.writeText(code).then(() => {
+      this.copied.set(true);
+      this.toast.success('Código copiado');
+      setTimeout(() => this.copied.set(false), 2000);
+    });
+  }
+
+  refreshInviteCode() {
+    this.refreshing.set(true);
+    this.family.regenerateInviteCode().subscribe({
+      next: () => {
+        this.refreshing.set(false);
+        this.loadInviteCode();
+        this.toast.success('Código renovado');
+      },
+      error: () => {
+        this.refreshing.set(false);
+        this.toast.error('Error al renovar código');
+      }
+    });
+  }
+
+  // ── Subgroup ──
+
+  onCreateSubgroup() {
+    const name = this.subgroupName().trim();
+    if (!name || this.creatingSubgroup()) return;
+
+    this.creatingSubgroup.set(true);
+    this.family.createSubgroup(name, this.subgroupDescription().trim() || undefined).subscribe({
+      next: () => {
+        this.creatingSubgroup.set(false);
+        this.showCreateSubgroup.set(false);
+        this.subgroupName.set('');
+        this.subgroupDescription.set('');
+        this.toast.success('Subgrupo creado');
+      },
+      error: () => {
+        this.creatingSubgroup.set(false);
+        this.toast.error('Error al crear subgrupo');
+      }
+    });
+  }
+
+  // ── Member management ──
+
+  onRoleChange(userId: string, role: string) {
+    this.family.changeMemberRole(userId, role).subscribe({
+      next: () => {
+        this.members.update(m => m.map(x => x.userId === userId ? { ...x, role } : x));
+        this.toast.success('Rol actualizado');
+      },
+      error: () => this.toast.error('Error al cambiar rol')
+    });
+  }
+
+  showTransfer() {
+    this.transferTargetUserId.set('');
+    this.showTransferModal.set(true);
+  }
+
+  onTransfer() {
+    if (!this.transferTargetUserId() || this.transferring()) return;
+
+    this.transferring.set(true);
+    this.family.transferOwnership(this.transferTargetUserId()).subscribe({
+      next: () => {
+        this.transferring.set(false);
+        this.showTransferModal.set(false);
+        this.currentMemberRole.set('admin');
+        this.members.update(m => m.map(x => ({
+          ...x,
+          role: x.userId === this.currentUserId() ? 'admin'
+               : x.userId === this.transferTargetUserId() ? 'owner'
+               : x.role
+        })));
+        this.toast.success('Propiedad transferida');
+      },
+      error: () => {
+        this.transferring.set(false);
+        this.toast.error('Error al transferir');
+      }
+    });
+  }
+
+  confirmRemoveMember(member: FamilyMemberDto) {
+    this.removeTarget.set({ userId: member.userId, fullName: member.fullName });
+  }
+
+  onRemoveMember() {
+    const target = this.removeTarget();
+    if (!target || this.removing()) return;
+
+    this.removing.set(true);
+    this.family.removeMember(target.userId).subscribe({
+      next: () => {
+        this.removing.set(false);
+        this.removeTarget.set(null);
+        this.members.update(m => m.filter(x => x.userId !== target.userId));
+        this.stats.update(s => ({ ...s, totalMembers: Math.max(0, s.totalMembers - 1) }));
+        this.toast.success('Miembro removido');
+      },
+      error: () => {
+        this.removing.set(false);
+        this.toast.error('Error al remover miembro');
+      }
+    });
+  }
+
+  // ── Shopping List ──
+
+  loadShoppingList() {
+    this.shoppingListLoading.set(true);
+    this.shoppingListService.getCurrent().subscribe({
+      next: (sl) => {
+        this.shoppingList.set(sl);
+        this.shoppingListLoading.set(false);
+      },
+      error: () => this.shoppingListLoading.set(false)
+    });
+  }
+
+  generateShoppingList() {
+    this.generatingList.set(true);
+    this.shoppingListService.generate().subscribe({
+      next: () => {
+        this.generatingList.set(false);
+        this.loadShoppingList();
+        this.toast.success('Lista de compras generada');
+      },
+      error: () => {
+        this.generatingList.set(false);
+        this.toast.error('Error al generar lista');
+      }
+    });
+  }
+
+  toggleItem(itemId: string) {
+    this.shoppingListService.togglePurchased(itemId).subscribe({
+      next: () => {
+        this.shoppingList.update(sl => {
+          if (!sl) return sl;
+          return {
+            ...sl,
+            items: sl.items.map(i =>
+              i.itemId === itemId ? { ...i, isPurchased: !i.isPurchased } : i
+            )
+          };
+        });
+      },
+      error: () => this.toast.error('Error al actualizar')
+    });
+  }
+
+  shareWhatsApp(list: ShoppingListDto) {
+    const text = this.shoppingListService.buildWhatsAppText(list);
+    this.shoppingListService.openWhatsApp(text);
+  }
+
+  // ── UI helpers ──
+
   barWidth(value: number, entries: LeaderboardEntryDto[]): number {
     if (entries.length === 0) return 0;
     const max = Math.max(...entries.map(e => e.value));
@@ -476,6 +883,11 @@ export class FamilyPage implements OnInit, OnDestroy {
   reactionEmoji(type: string): string {
     const map: Record<string, string> = { like: '👍', fire: '🔥', strong: '💪', heart: '❤️', clap: '👏', wow: '😮' };
     return map[type.toLowerCase()] || '👍';
+  }
+
+  roleLabel(role: string): string {
+    const map: Record<string, string> = { owner: 'Creador', admin: 'Admin', member: 'Miembro', pending: 'Pendiente' };
+    return map[role] || role;
   }
 
   getColor(id: string): string {

@@ -2,7 +2,7 @@ import { Injectable, inject, isDevMode } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto } from '../models/family.models';
+import { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, InviteCodeDto } from '../models/family.models';
 import * as signalR from '@microsoft/signalr';
 
 @Injectable({ providedIn: 'root' })
@@ -60,6 +60,34 @@ export class FamilyService {
   deleteComment(postId: string, commentId: string): Observable<void> {
     return this.api.delete<void>(`/family/posts/${postId}/comments/${commentId}`);
   }
+
+  // ── Group Management ──
+
+  getInviteCode(): Observable<InviteCodeDto> {
+    return this.api.get<InviteCodeDto>('/family/invite-code');
+  }
+
+  regenerateInviteCode(): Observable<void> {
+    return this.api.post<void>('/family/invite-code/regenerate');
+  }
+
+  createSubgroup(name: string, description?: string): Observable<void> {
+    return this.api.post<void>('/family/subgroups', { name, description });
+  }
+
+  transferOwnership(targetUserId: string): Observable<void> {
+    return this.api.post<void>('/family/transfer-ownership', { targetUserId });
+  }
+
+  changeMemberRole(userId: string, role: string): Observable<void> {
+    return this.api.patch<void>(`/family/members/${userId}/role`, { role });
+  }
+
+  removeMember(userId: string): Observable<void> {
+    return this.api.delete<void>(`/family/members/${userId}`);
+  }
+
+  // ── SignalR ──
 
   async connect(): Promise<void> {
     if (this.hubConnection?.state === signalR.HubConnectionState.Connected) return;
