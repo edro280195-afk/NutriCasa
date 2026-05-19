@@ -1,6 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { NcPageHeaderComponent, NcLoadingComponent } from '../../shared/components';
 import { ProfileService } from '../../services/profile.service';
 import type { MedicalProfileDto, UpdateMedicalProfileRequest } from '../../models/profile.models';
@@ -8,7 +7,7 @@ import type { MedicalProfileDto, UpdateMedicalProfileRequest } from '../../model
 @Component({
   selector: 'app-medical-profile',
   standalone: true,
-  imports: [FormsModule, RouterLink, NcPageHeaderComponent, NcLoadingComponent],
+  imports: [FormsModule, NcPageHeaderComponent, NcLoadingComponent],
   template: `
   <div class="page">
     <nc-page-header title="Mi perfil médico" backLink="/profile"></nc-page-header>

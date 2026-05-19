@@ -18,7 +18,7 @@ const STEPS = [
 
 const OVERRIDE_STEPS = [
   'Grupo', 'Datos básicos', 'Medidas', 'Tipo de cuerpo',
-  'Actividad', 'Presupuesto', 'Perfil médico', 'Override médico', 'Meta', 'Generando'
+  'Actividad', 'Presupuesto', 'Perfil médico', 'Meta', 'Generando'
 ] as const;
 
 @Component({
@@ -1020,7 +1020,6 @@ export class OnboardingPage {
     this.onboarding.completeStep6Override({
       passwordConfirmation: this.overrideForm.value.password!,
       disclaimerAccepted: true,
-      disclaimerVersionId: '00000000-0000-0000-0000-000000000000',
     }).subscribe({
       next: () => {
         this.overrideSubmitted.set(true);

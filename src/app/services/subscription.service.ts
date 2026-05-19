@@ -6,6 +6,7 @@ import {
   UserSubscriptionDto,
   CreateCheckoutRequest,
   TrialSubscriptionRequest,
+  ConfirmPaymentRequest,
 } from '../models/subscription.models';
 
 @Injectable({ providedIn: 'root' })
@@ -26,6 +27,10 @@ export class SubscriptionService {
 
   startTrial(request: TrialSubscriptionRequest): Observable<UserSubscriptionDto> {
     return this.api.post<UserSubscriptionDto>('/subscriptions/trial', request);
+  }
+
+  confirmPayment(request: ConfirmPaymentRequest): Observable<UserSubscriptionDto> {
+    return this.api.post<UserSubscriptionDto>('/subscriptions/confirm-payment', request);
   }
 
   cancel(cancelImmediately: boolean): Observable<void> {

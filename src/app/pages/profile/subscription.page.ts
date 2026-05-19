@@ -205,6 +205,7 @@ export class SubscriptionPage {
   readonly cancelling = signal(false);
 
   constructor() {
+    this.confirmReturnedPayment();
     this.loadData();
   }
 
@@ -227,7 +228,7 @@ export class SubscriptionPage {
 
   statusLabel(status: string): string {
     const map: Record<string, string> = {
-      trialing: 'Prueba', active: 'Activo', cancelled: 'Cancelado', expired: 'Expirado',
+      pending: 'Pendiente', trialing: 'Prueba', active: 'Activo', cancelled: 'Cancelado', expired: 'Expirado',
     };
     return map[status.toLowerCase()] || status;
   }
@@ -236,11 +237,7 @@ export class SubscriptionPage {
     this.changing.set(true);
     if (plan.priceMonthlyMxn === 0) {
       this.subscriptionService.createCheckout({ planId: plan.planId }).subscribe({
-        next: () => {
-          this.toast.success(`Plan ${plan.name} activado`);
-          this.loadData();
-          this.changing.set(false);
-        },
+        next: (sub) => this.handleCheckoutResponse(sub, `Plan ${plan.name} activado`),
         error: () => { this.changing.set(false); this.toast.error('Error al cambiar de plan'); },
       });
     } else if (plan.trialDays > 0) {
@@ -257,11 +254,7 @@ export class SubscriptionPage {
       });
     } else {
       this.subscriptionService.createCheckout({ planId: plan.planId }).subscribe({
-        next: () => {
-          this.toast.success(`Plan ${plan.name} activado`);
-          this.loadData();
-          this.changing.set(false);
-        },
+        next: (sub) => this.handleCheckoutResponse(sub, `Plan ${plan.name} activado`),
         error: () => { this.changing.set(false); this.toast.error('Error al cambiar de plan'); },
       });
     }
@@ -276,6 +269,41 @@ export class SubscriptionPage {
         this.cancelling.set(false);
       },
       error: () => { this.cancelling.set(false); this.toast.error('Error al cancelar'); },
+    });
+  }
+
+  private handleCheckoutResponse(sub: UserSubscriptionDto, successMessage: string) {
+    if (sub.checkoutUrl) {
+      window.location.href = sub.checkoutUrl;
+      return;
+    }
+
+    this.toast.success(successMessage);
+    this.loadData();
+    this.changing.set(false);
+  }
+
+  private confirmReturnedPayment() {
+    const params = new URLSearchParams(window.location.search);
+    const paymentId = params.get('payment_id');
+    const status = params.get('status');
+
+    if (!paymentId || status !== 'approved') {
+      return;
+    }
+
+    this.changing.set(true);
+    this.subscriptionService.confirmPayment({ paymentId }).subscribe({
+      next: () => {
+        this.toast.success('Pago confirmado. Tu plan ya esta activo.');
+        this.router.navigate(['/profile/subscription'], { replaceUrl: true });
+        this.loadData();
+        this.changing.set(false);
+      },
+      error: () => {
+        this.toast.error('No pudimos confirmar el pago todavia.');
+        this.changing.set(false);
+      },
     });
   }
 }

@@ -145,6 +145,8 @@ describe('OnboardingService', () => {
     const mockRes: CompleteStep7DisclaimerGoalResponse = {
       onboardingComplete: true,
       ketoProfile: { bmrKcal: 1800, tdeeKcal: 2100, dailyCalories: 1800, carbsGrams: 20, proteinGrams: 120, fatGrams: 140, carbsPercent: 5, proteinPercent: 27, fatPercent: 68 },
+      firstPlanGenerated: true,
+      firstPlanId: 'plan-1',
     };
     api.post = vi.fn().mockReturnValueOnce(of(mockRes));
 

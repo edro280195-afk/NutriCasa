@@ -31,6 +31,9 @@
               }
             ],
             "serviceWorker": "src/ngsw-config.json",
+            "allowedCommonJsDependencies": [
+              "lottie-web"
+            ],
             "styles": [
               "src/styles.scss"
             ]

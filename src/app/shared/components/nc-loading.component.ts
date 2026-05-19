@@ -7,7 +7,7 @@ import { Component, input } from '@angular/core';
   @switch (type()) {
     @case ('skeleton') {
       <div class="skeleton-wrap">
-        @for (i of [].constructor(lines()); track i) {
+        @for (i of [].constructor(lines()); track $index) {
           <div class="skeleton-line" [class.skeleton-line--short]="$last"></div>
         }
       </div>

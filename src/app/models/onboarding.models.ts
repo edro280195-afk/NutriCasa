@@ -86,7 +86,7 @@ export interface MedicalProfileRequest {
 export interface MedicalOverrideRequest {
   passwordConfirmation: string;
   disclaimerAccepted: boolean;
-  disclaimerVersionId: string;
+  disclaimerVersionId?: string;
 }
 
 export interface DisclaimerGoalRequest {
@@ -116,6 +116,9 @@ export interface CompleteStep6MedicalProfileResponse {
 export interface CompleteStep7DisclaimerGoalResponse {
   onboardingComplete: boolean;
   ketoProfile: KetoProfileResult;
+  firstPlanGenerated: boolean;
+  firstPlanId?: string;
+  firstPlanError?: string;
 }
 
 export type KetoProfile = KetoProfileResult;

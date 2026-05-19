@@ -1,5 +1,6 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { FamilyService } from '../../services/family.service';
 import { AuthService } from '../../services/auth.service';
@@ -12,7 +13,7 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
 @Component({
   selector: 'app-family',
   standalone: true,
-  imports: [FormsModule, TimeAgoPipe],
+  imports: [FormsModule, TimeAgoPipe, RouterLink],
   template: `
   <div class="page">
     <div class="page-header">
@@ -47,6 +48,11 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
             </div>
           }
         </div>
+        <a routerLink="/challenges" class="challenge-cta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Retos entre miembros
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
       </div>
 
       @if (inviteCode(); as ic) {
@@ -377,6 +383,8 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
     .fh-av:not(:first-child) { margin-left: -12px; }
     .fh-av-check { position: absolute; bottom: -2px; right: -2px; width: 16px; height: 16px; background: var(--mint); border-radius: 50%; border: 2px solid var(--pine); }
     .fh-av-check::after { content: ''; position: absolute; left: 4px; top: 2px; width: 4px; height: 7px; border: solid var(--pine-darker); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    .challenge-cta { display: flex; align-items: center; gap: 6px; margin-top: 16px; padding: 10px 16px; background: rgba(91,192,150,0.15); border: 1px solid var(--mint); border-radius: var(--r-pill); color: var(--mint-light); font-size: 13px; font-weight: 600; text-decoration: none; transition: background 0.2s; }
+    .challenge-cta:hover { background: rgba(91,192,150,0.25); }
 
     .invite-card { background: var(--paper); border: 1px solid var(--mint); border-radius: var(--r-lg); padding: 14px; margin-bottom: 16px; }
     .invite-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); margin-bottom: 8px; }

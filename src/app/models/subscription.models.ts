@@ -24,6 +24,7 @@ export interface UserSubscriptionDto {
   startedAt: string;
   currentPeriodEnd?: string;
   cancelAtPeriodEnd: boolean;
+  checkoutUrl?: string;
 }
 
 export interface CreateCheckoutRequest {
@@ -32,6 +33,10 @@ export interface CreateCheckoutRequest {
 
 export interface TrialSubscriptionRequest {
   planId: string;
+}
+
+export interface ConfirmPaymentRequest {
+  paymentId: string;
 }
 
 export interface CancelSubscriptionRequest {
