@@ -497,7 +497,12 @@ export class PlanPage {
         this.showSuccess.set(true);
         setTimeout(() => this.showSuccess.set(false), 2500);
       },
-      error: () => { this.generating.set(false); this.toast.error('Error al generar el plan'); },
+      error: (err: any) => { 
+        this.generating.set(false); 
+        const msg = err.error?.message || err.message || 'Error al generar el plan';
+        this.toast.error(msg); 
+        console.error('Generate Plan Error:', err);
+      },
     });
   }
 
