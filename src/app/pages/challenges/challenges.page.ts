@@ -284,15 +284,17 @@ export class ChallengesPage implements OnInit {
 
   private load() {
     this.loading.set(true);
+    this.activeChallenges.set([]);
+    this.myChallenges.set([]);
+
     this.challengeService.getActive().subscribe({
-      next: (cs) => {
-        this.activeChallenges.set(cs);
-        this.canCreate.set(cs.length === 0 || true);
-      },
+      next: (cs) => { this.activeChallenges.set(cs); this.canCreate.set(true); },
+      error: () => {},
     });
 
     this.challengeService.getMine().subscribe({
       next: (cs) => this.myChallenges.set(cs),
+      error: () => this.loading.set(false),
       complete: () => this.loading.set(false),
     });
   }

@@ -11,6 +11,7 @@ export interface FamilyPostDto {
   authorName: string;
   postType: string;
   content: string;
+  imageUrl?: string;
   createdAt: string;
   reactions: PostReactionDto[];
   comments: PostCommentDto[];
@@ -47,7 +48,14 @@ export interface PostResultDto {
   authorName: string;
   postType: string;
   content: string;
+  imageUrl?: string;
   createdAt: string;
+}
+
+export interface SubgroupCreatedDto {
+  subgroupId: string;
+  subgroupName: string;
+  inviteCode: string;
 }
 
 export interface ReactionResultDto {

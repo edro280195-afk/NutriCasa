@@ -41,7 +41,7 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
       <div class="macros-card">
         <div class="macros-header">
           <div>
-            <div class="macros-label">Mi día · Macros</div>
+            <div class="macros-label">Hoy · Tu meta keto</div>
             <div class="macros-title">Vas <span class="italic">muy bien.</span></div>
           </div>
           <div class="macros-pill"><span class="dot"></span>{{ p.budgetModeName }}</div>
@@ -50,17 +50,17 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
         <div class="macros-grid">
           <div class="macro">
             <div class="macro-name">Grasa</div>
-            <div class="macro-value">{{ macros().fatGrams }}<span class="small">g</span></div>
+            <div class="macro-value">{{ todayFatGr() }}<span class="small">/ {{ macros().fatGrams }}g</span></div>
             <div class="macro-bar"><div class="macro-bar-fill fat" [style.width.%]="fatPercent()"></div></div>
           </div>
           <div class="macro">
             <div class="macro-name">Proteína</div>
-            <div class="macro-value">{{ macros().proteinGrams }}<span class="small">g</span></div>
+            <div class="macro-value">{{ todayProteinGr() }}<span class="small">/ {{ macros().proteinGrams }}g</span></div>
             <div class="macro-bar"><div class="macro-bar-fill protein" [style.width.%]="proteinPercent()"></div></div>
           </div>
           <div class="macro">
-            <div class="macro-name">Carbs</div>
-            <div class="macro-value">{{ macros().carbsGrams }}<span class="small">g</span></div>
+            <div class="macro-name">Carbs netos</div>
+            <div class="macro-value">{{ todayCarbsGr() }}<span class="small">/ {{ macros().carbsGrams }}g</span></div>
             <div class="macro-bar"><div class="macro-bar-fill carbs" [style.width.%]="carbsPercent()"></div></div>
           </div>
         </div>
@@ -70,14 +70,14 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
             <div class="macros-cal-circle"><span>{{ calPercent() }}%</span></div>
             <div class="macros-cal-text">
               <strong>{{ todayCalories() }} / {{ macros().dailyCalories }} kcal</strong>
-              <small>{{ macros().dailyCalories - todayCalories() }} kcal por consumir</small>
+              <small>{{ macros().dailyCalories - todayCalories() }} kcal restantes hoy</small>
             </div>
           </div>
-          <div class="macros-arrow">
+          <button class="macros-arrow" (click)="router.navigate(['/plan'])" title="Ver plan semanal">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
             </svg>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -209,12 +209,23 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
         <button class="form-btn" (click)="submitCheckIn(energyInput.valueAsNumber, moodInput.valueAsNumber, waterInput.valueAsNumber, notesInput.value)">Guardar</button>
         @if (checkInSaving()) { <div class="form-feedback saving">Guardando...</div> }
         @if (checkInError()) { <div class="form-feedback error">{{ checkInError() }}</div> }
-        @if (checkInDone()) {
-          <div class="checkin-celebration">
-            <app-lottie src="/lottie/avocado.json" width="120px" height="120px" [loop]="false"></app-lottie>
-            <div class="form-feedback success">¡Check-in completado!</div>
+      </div>
+    }
+
+    @if (showCelebration()) {
+      <div class="celebration-overlay" (click)="showCelebration.set(false)">
+        <div class="celebration-content">
+          <div class="celebration-ring"></div>
+          <app-lottie src="/lottie/avocado.json" width="200px" height="200px" [loop]="false" class="celebration-lottie"></app-lottie>
+          <h2 class="celebration-title">¡Excelente!</h2>
+          <p class="celebration-sub">Check-in del día completado.<br>Sigue así, cada día cuenta.</p>
+          <div class="celebration-chips">
+            <span class="cel-chip">💧 Hidratación</span>
+            <span class="cel-chip">⚡ Energía</span>
+            <span class="cel-chip">😊 Ánimo</span>
           </div>
-        }
+          <p class="celebration-hint">Toca para continuar</p>
+        </div>
       </div>
     }
 
@@ -227,9 +238,9 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
       @if (todayMeals().length > 0) {
         <div class="meals">
           @for (meal of todayMeals(); track meal.planMealId) {
-            <div class="meal" [class.locked]="meal.isLocked">
+            <button class="meal" [class.locked]="meal.isLocked" (click)="selectedMeal.set(meal)">
               <div class="meal-thumb" [class]="'meal-thumb-' + getMealColor(meal.mealType)">
-                <svg viewBox="0 0 24 24"><path d="M12 2L8 6h2v8H6l4 4 4-4h-4V6h2L12 2z M3 22h18v-2H3v2z"/></svg>
+                {{ mealEmoji(meal.mealType) }}
               </div>
               <div class="meal-info">
                 <div class="meal-time">{{ getMealLabel(meal.mealType) }}</div>
@@ -240,7 +251,10 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
                   <span class="fat">{{ meal.recipe.fatGr }}g G</span>
                 </div>
               </div>
-            </div>
+              <div class="meal-chevron">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </button>
           }
         </div>
       } @else {
@@ -249,6 +263,69 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
         </div>
       }
     </div>
+
+    @if (selectedMeal(); as m) {
+      <div class="drawer-backdrop" (click)="selectedMeal.set(null)">
+        <div class="recipe-drawer" (click)="$event.stopPropagation()">
+          <div class="drawer-handle"></div>
+          <button class="drawer-close" (click)="selectedMeal.set(null)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <div class="drawer-type-badge">{{ getMealLabel(m.mealType) }}</div>
+          <h2 class="drawer-name">{{ m.recipe.name }}</h2>
+
+          <div class="drawer-chips">
+            <div class="dchip dchip-kcal">{{ m.recipe.calories }} kcal</div>
+            <div class="dchip dchip-fat">{{ m.recipe.fatGr }}g grasa</div>
+            <div class="dchip dchip-prot">{{ m.recipe.proteinGr }}g prot</div>
+            <div class="dchip dchip-carb">{{ m.recipe.carbsGr }}g carbs</div>
+          </div>
+
+          <div class="drawer-meta">
+            @if (m.recipe.prepTimeMin) {
+              <span class="drawer-meta-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {{ m.recipe.prepTimeMin }}min prep
+              </span>
+            }
+            @if (m.recipe.cookTimeMin) {
+              <span class="drawer-meta-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 006 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/></svg>
+                {{ m.recipe.cookTimeMin }}min cocción
+              </span>
+            }
+            @if (m.recipe.estimatedCostMxn) {
+              <span class="drawer-meta-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                ~\${{ m.recipe.estimatedCostMxn }} MXN
+              </span>
+            }
+          </div>
+
+          @if (m.recipe.ingredients && m.recipe.ingredients.length > 0) {
+            <div class="drawer-section">
+              <div class="drawer-section-title">Ingredientes</div>
+              <div class="drawer-ingredients">
+                @for (ing of m.recipe.ingredients; track ing.name) {
+                  <div class="drawer-ing">
+                    <span class="ing-dot"></span>
+                    <span class="ing-name">{{ ing.name }}</span>
+                    <span class="ing-qty">{{ ing.amount }} {{ ing.unit }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (m.recipe.instructions) {
+            <div class="drawer-section">
+              <div class="drawer-section-title">Preparación</div>
+              <p class="drawer-instructions">{{ m.recipe.instructions }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
 
     <div class="family-card">
       <div class="family-eyebrow">Tu familia</div>
@@ -371,13 +448,15 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
     .section-link { font-size: 12px; font-weight: 600; color: var(--pine); text-transform: uppercase; letter-spacing: 0.12em; cursor: pointer; }
     .section-link:hover { text-decoration: underline; }
     .meals { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
-    .meal { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; display: flex; gap: 16px; align-items: center; position: relative; transition: all 0.2s var(--ease-out); }
-    .meal:hover { border-color: var(--mint); box-shadow: var(--shadow-md); }
-    .meal-thumb { width: 64px; height: 64px; border-radius: var(--r-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-    .meal-thumb-1 { background: linear-gradient(135deg, #F5C7B8, #E8866B); }
-    .meal-thumb-2 { background: linear-gradient(135deg, #B5E2CB, #5BC096); }
-    .meal-thumb-3 { background: linear-gradient(135deg, #B8DCEC, #5BA3D0); }
-    .meal-thumb svg { width: 32px; height: 32px; fill: rgba(255,255,255,0.85); }
+    .meal { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; display: flex; gap: 16px; align-items: center; position: relative; transition: all 0.2s var(--ease-out); cursor: pointer; width: 100%; text-align: left; }
+    .meal:hover { border-color: var(--mint); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .meal:active { transform: scale(0.99); }
+    .meal-thumb { width: 56px; height: 56px; border-radius: var(--r-md); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+    .meal-thumb-1 { background: linear-gradient(135deg, #FFF0EB, #FBDDCC); }
+    .meal-thumb-2 { background: linear-gradient(135deg, #E8F8F0, #C8EDDA); }
+    .meal-thumb-3 { background: linear-gradient(135deg, #E6F3FB, #C2DCF0); }
+    .meal-chevron { color: var(--ink-muted); flex-shrink: 0; opacity: 0; transition: opacity 0.2s; }
+    .meal:hover .meal-chevron { opacity: 1; }
     .meal-info { flex: 1; min-width: 0; }
     .meal-time { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
     .meal-name { font-family: var(--display); font-size: 17px; font-weight: 500; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.005em; }
@@ -414,11 +493,51 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
     .bottom-nav { animation: slideUp 0.5s var(--ease-out) 0.4s both; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    .macros-arrow { color: var(--mint-light); background: rgba(91,192,150,0.12); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: none; cursor: pointer; transition: background 0.2s; }
+    .macros-arrow:hover { background: rgba(91,192,150,0.22); }
+
+    /* ── Recipe Drawer ── */
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(15,29,20,0.55); z-index: 150; display: flex; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .recipe-drawer { background: var(--paper); width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 12px 24px 36px; max-height: 82vh; overflow-y: auto; position: relative; animation: slideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
+    .drawer-handle { width: 40px; height: 4px; background: var(--line); border-radius: 4px; margin: 0 auto 20px; }
+    .drawer-close { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; background: var(--cream-warm); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-muted); }
+    .drawer-type-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; background: var(--mint-soft); color: var(--pine); padding: 4px 10px; border-radius: var(--r-pill); margin-bottom: 10px; }
+    .drawer-name { font-family: var(--display); font-size: 24px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 16px; }
+    .drawer-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .dchip { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: var(--r-pill); }
+    .dchip-kcal { background: var(--mint-soft); color: var(--pine); }
+    .dchip-fat { background: rgba(232,134,107,0.12); color: #b05030; }
+    .dchip-prot { background: rgba(91,163,208,0.12); color: #2a6a96; }
+    .dchip-carb { background: rgba(255,193,7,0.12); color: #8a6200; }
+    .drawer-meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .drawer-meta-item { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+    .drawer-section { margin-bottom: 20px; }
+    .drawer-section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 12px; }
+    .drawer-ingredients { display: flex; flex-direction: column; gap: 6px; }
+    .drawer-ing { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--cream); border-radius: var(--r-md); font-size: 13px; }
+    .ing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); flex-shrink: 0; }
+    .ing-name { flex: 1; color: var(--ink); font-weight: 500; }
+    .ing-qty { color: var(--ink-muted); font-size: 12px; white-space: nowrap; }
+    .drawer-instructions { font-size: 14px; color: var(--ink-soft); line-height: 1.7; white-space: pre-wrap; }
+
+    /* ── Check-in Celebration ── */
+    .celebration-overlay { position: fixed; inset: 0; background: rgba(10,42,32,0.88); z-index: 200; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); animation: fadeIn 0.3s ease; cursor: pointer; }
+    .celebration-content { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 24px; text-align: center; position: relative; }
+    .celebration-ring { position: absolute; width: 280px; height: 280px; border-radius: 50%; border: 2px solid rgba(91,192,150,0.25); animation: pulseRing 2s ease-in-out infinite; }
+    @keyframes pulseRing { 0%,100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.08); opacity: 0.15; } }
+    .celebration-lottie { position: relative; z-index: 1; }
+    .celebration-title { font-family: var(--display); font-size: 38px; font-weight: 400; color: var(--cream); letter-spacing: -0.02em; margin: 0; line-height: 1; }
+    .celebration-sub { font-size: 15px; color: rgba(248,244,236,0.7); margin: 0; line-height: 1.6; }
+    .celebration-chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+    .cel-chip { font-size: 13px; font-weight: 600; padding: 6px 14px; background: rgba(91,192,150,0.15); border: 1px solid rgba(91,192,150,0.3); border-radius: var(--r-pill); color: var(--mint-light); }
+    .celebration-hint { font-size: 12px; color: rgba(248,244,236,0.35); margin-top: 8px; letter-spacing: 0.06em; }
   `]
 })
 export class DashboardPage implements OnInit {
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
   private readonly planService = inject(PlanService);
   private readonly api = inject(ApiService);
 
@@ -428,6 +547,8 @@ export class DashboardPage implements OnInit {
   readonly lastWeight = signal('---');
   readonly savingsAmount = signal(0);
 
+  readonly selectedMeal = signal<MealPlanDto | null>(null);
+  readonly showCelebration = signal(false);
   readonly showWeightForm = signal(false);
   readonly showCheckInForm = signal(false);
   readonly weightSaving = signal(false);
@@ -450,23 +571,30 @@ export class DashboardPage implements OnInit {
     return p.days[dayIndex]?.meals ?? [];
   });
 
-  readonly todayCalories = computed(() => {
-    return this.todayMeals().reduce((sum, m) => sum + m.recipe.calories, 0);
-  });
+  readonly todayCalories = computed(() =>
+    this.todayMeals().reduce((sum, m) => sum + m.recipe.calories, 0)
+  );
+  readonly todayFatGr = computed(() =>
+    Math.round(this.todayMeals().reduce((s, m) => s + m.recipe.fatGr, 0))
+  );
+  readonly todayProteinGr = computed(() =>
+    Math.round(this.todayMeals().reduce((s, m) => s + m.recipe.proteinGr, 0))
+  );
+  readonly todayCarbsGr = computed(() =>
+    Math.round(this.todayMeals().reduce((s, m) => s + m.recipe.carbsGr, 0))
+  );
 
   readonly fatPercent = computed(() => {
     const m = this.macros();
-    return m.fatGrams > 0 ? Math.min(100, Math.round((this.todayMeals().reduce((s, m) => s + m.recipe.fatGr, 0) / m.fatGrams) * 100)) : 0;
+    return m.fatGrams > 0 ? Math.min(100, Math.round((this.todayFatGr() / m.fatGrams) * 100)) : 0;
   });
-
   readonly proteinPercent = computed(() => {
     const m = this.macros();
-    return m.proteinGrams > 0 ? Math.min(100, Math.round((this.todayMeals().reduce((s, m) => s + m.recipe.proteinGr, 0) / m.proteinGrams) * 100)) : 0;
+    return m.proteinGrams > 0 ? Math.min(100, Math.round((this.todayProteinGr() / m.proteinGrams) * 100)) : 0;
   });
-
   readonly carbsPercent = computed(() => {
     const m = this.macros();
-    return m.carbsGrams > 0 ? Math.min(100, Math.round((this.todayMeals().reduce((s, m) => s + m.recipe.carbsGr, 0) / m.carbsGrams) * 100)) : 0;
+    return m.carbsGrams > 0 ? Math.min(100, Math.round((this.todayCarbsGr() / m.carbsGrams) * 100)) : 0;
   });
 
   readonly calPercent = computed(() => {
@@ -542,6 +670,11 @@ export class DashboardPage implements OnInit {
     return map[type] || 1;
   }
 
+  mealEmoji(type: string): string {
+    const map: Record<string, string> = { breakfast: '🥑', lunch: '🥗', dinner: '🍽️', snack: '🫐' };
+    return map[type] || '🍴';
+  }
+
   shareSavings() {
     const p = this.plan();
     if (!p) return;
@@ -587,7 +720,9 @@ export class DashboardPage implements OnInit {
       next: () => {
         this.checkInSaving.set(false);
         this.checkInDone.set(true);
-        setTimeout(() => this.showCheckInForm.set(false), 1500);
+        this.showCheckInForm.set(false);
+        this.showCelebration.set(true);
+        setTimeout(() => this.showCelebration.set(false), 3000);
       },
       error: (err) => {
         this.checkInSaving.set(false);

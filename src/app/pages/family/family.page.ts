@@ -7,7 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { ShoppingListService } from '../../services/shopping-list.service';
 import { TimeAgoPipe } from '../../pipes/time-ago.pipe';
 import { NcToastService } from '../../shared/components/nc-toast.service';
-import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, LeaderboardEntryDto, InviteCodeDto } from '../../models/family.models';
+import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, LeaderboardEntryDto, InviteCodeDto, SubgroupCreatedDto } from '../../models/family.models';
 import type { ShoppingListDto } from '../../models/shopping-list.models';
 import { gsap } from 'gsap';
 
@@ -243,10 +243,32 @@ import { gsap } from 'gsap';
         </div>
 
         <div class="composer">
-          <textarea [(ngModel)]="newPostContent" placeholder="¿Qué quieres compartir con tu familia?" maxlength="500" rows="2" class="composer-input"></textarea>
+          <div class="composer-types">
+            @for (pt of postTypes; track pt.key) {
+              <button class="ctype-pill" [class.active]="selectedPostType() === pt.key" (click)="selectedPostType.set(pt.key)">
+                <span>{{ pt.emoji }}</span> {{ pt.label }}
+              </button>
+            }
+          </div>
+          <textarea [(ngModel)]="newPostContent" [placeholder]="composerPlaceholder()" maxlength="500" rows="3" class="composer-input"></textarea>
+          @if (imagePreviewUrl()) {
+            <div class="composer-preview">
+              <img [src]="imagePreviewUrl()!" class="composer-img-preview" alt="Vista previa" />
+              <button class="composer-remove-img" (click)="removeImage()" title="Quitar imagen">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          }
           <div class="composer-actions">
-            <span class="composer-count">{{ newPostContent().length }}/500</span>
-            <button class="btn-primary" [disabled]="!newPostContent().trim() || posting()" (click)="submitPost()">
+            <div class="composer-left">
+              <span class="composer-count">{{ newPostContent().length }}/500</span>
+              <label class="composer-attach" title="Adjuntar imagen">
+                <input type="file" accept="image/*" (change)="onImageSelected($event)" style="display:none" />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                @if (uploadingImage()) { <span class="uploading-dot"></span> }
+              </label>
+            </div>
+            <button class="btn-primary" [disabled]="!newPostContent().trim() || posting() || uploadingImage()" (click)="submitPost()">
               {{ posting() ? 'Publicando...' : 'Publicar' }}
             </button>
           </div>
@@ -254,11 +276,14 @@ import { gsap } from 'gsap';
 
         <div class="feed">
           @for (post of feed(); track post.postId) {
-            <div class="feed-card" [attr.data-post-id]="post.postId" [style.--card-accent]="getColor(post.authorUserId || post.postId)">
+            <div class="feed-card" [attr.data-post-id]="post.postId" [class]="'feed-card post-type-' + post.postType" [style.--card-accent]="postTypeColor(post.postType)">
               <div class="feed-header-row">
                 <div class="feed-av" [style.background]="getColor(post.authorUserId || post.postId)">{{ post.authorName.charAt(0) }}</div>
                 <div class="feed-header-info">
-                  <span class="feed-author">{{ post.authorName }}</span>
+                  <div class="feed-author-row">
+                    <span class="feed-author">{{ post.authorName }}</span>
+                    <span class="feed-type-badge">{{ postTypeEmoji(post.postType) }} {{ postTypeLabel(post.postType) }}</span>
+                  </div>
                   <span class="feed-time">{{ post.createdAt | timeAgo }}</span>
                 </div>
                 @if (post.authorUserId === currentUserId()) {
@@ -268,6 +293,11 @@ import { gsap } from 'gsap';
                 }
               </div>
               <div class="feed-content">{{ post.content }}</div>
+              @if (post.imageUrl) {
+                <div class="feed-image-wrap">
+                  <img [src]="post.imageUrl" class="feed-image" loading="lazy" alt="Imagen del post" (click)="openImageFullscreen(post.imageUrl)" />
+                </div>
+              }
 
               <div class="feed-reactions">
                 <div class="reaction-bubbles">
@@ -298,7 +328,13 @@ import { gsap } from 'gsap';
               </div>
 
               <div class="feed-comments">
-                @for (c of post.comments; track c.commentId) {
+                @if (post.commentCount > 2 && !expandedComments[post.postId]) {
+                  <button class="show-comments-btn" (click)="expandedComments[post.postId] = true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    Ver {{ post.commentCount - 2 }} comentario{{ post.commentCount - 2 > 1 ? 's' : '' }} más
+                  </button>
+                }
+                @for (c of visibleComments(post); track c.commentId) {
                   <div class="comment-row" [attr.data-comment-id]="c.commentId">
                     <div class="comment-header">
                       <span class="comment-author">{{ c.authorName }}</span>
@@ -329,14 +365,34 @@ import { gsap } from 'gsap';
         <div class="modal-backdrop" (click)="showCreateSubgroup.set(false)">
           <div class="modal-card" (click)="$event.stopPropagation()">
             <h3 class="modal-title">Crear subgrupo</h3>
+            <p class="modal-hint">Un subgrupo es un grupo separado con su propio muro y código de invitación.</p>
             <input class="modal-input" [(ngModel)]="subgroupName" placeholder="Nombre del subgrupo" maxlength="100">
-            <textarea class="modal-input modal-textarea" [(ngModel)]="subgroupDescription" placeholder="Descripción (opcional)" rows="3"></textarea>
+            <textarea class="modal-input modal-textarea" [(ngModel)]="subgroupDescription" placeholder="Descripción (opcional)" rows="2"></textarea>
             <div class="modal-actions">
               <button class="btn-ghost" (click)="showCreateSubgroup.set(false)">Cancelar</button>
               <button class="btn-primary" (click)="onCreateSubgroup()" [disabled]="!subgroupName().trim() || creatingSubgroup()">
-                {{ creatingSubgroup() ? 'Creando...' : 'Crear' }}
+                {{ creatingSubgroup() ? 'Creando...' : 'Crear subgrupo' }}
               </button>
             </div>
+          </div>
+        </div>
+      }
+
+      @if (newSubgroup(); as sg) {
+        <div class="modal-backdrop" (click)="newSubgroup.set(null)">
+          <div class="modal-card subgroup-created-card" (click)="$event.stopPropagation()">
+            <div class="sg-success-icon">✅</div>
+            <h3 class="modal-title">¡Subgrupo creado!</h3>
+            <p class="sg-name">{{ sg.subgroupName }}</p>
+            <p class="sg-instruction">Comparte este código con las personas que quieras agregar al subgrupo:</p>
+            <div class="sg-code-row">
+              <code class="sg-code">{{ sg.inviteCode }}</code>
+              <button class="btn-sm" (click)="copySubgroupCode(sg.inviteCode)">
+                {{ subgroupInviteCopied() ? '¡Copiado!' : 'Copiar' }}
+              </button>
+            </div>
+            <p class="sg-note">Los miembros usan este código en "Unirse a grupo" desde su perfil. Cada subgrupo tiene su propio muro y lista de miembros.</p>
+            <button class="btn-primary sg-done-btn" (click)="newSubgroup.set(null)">Entendido</button>
           </div>
         </div>
       }
@@ -580,6 +636,47 @@ import { gsap } from 'gsap';
     .family-section:nth-of-type(4) { animation: slideUp 0.7s var(--ease-out) 0.3s both; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    .composer-types { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .ctype-pill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--cream); color: var(--ink-muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .ctype-pill.active { background: var(--pine); border-color: var(--pine); color: var(--cream); }
+    .ctype-pill:not(.active):hover { border-color: var(--mint); color: var(--pine); }
+
+    .composer-left { display: flex; align-items: center; gap: 10px; }
+    .composer-attach { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--ink-muted); position: relative; transition: color 0.2s, background 0.2s; }
+    .composer-attach:hover { color: var(--pine); background: var(--cream); }
+    .uploading-dot { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; background: var(--mint); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+    .composer-preview { position: relative; margin: 10px 0; border-radius: var(--r-md); overflow: hidden; max-height: 200px; }
+    .composer-img-preview { width: 100%; object-fit: cover; display: block; max-height: 200px; }
+    .composer-remove-img { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(0,0,0,0.55); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+    .composer-remove-img:hover { background: rgba(0,0,0,0.8); }
+
+    .feed-author-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .feed-type-badge { font-size: 11px; font-weight: 600; color: var(--ink-muted); background: var(--cream); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 2px 8px; }
+
+    .feed-image-wrap { margin: 0 -20px 16px; overflow: hidden; max-height: 320px; }
+    .feed-image { width: 100%; object-fit: cover; display: block; max-height: 320px; cursor: zoom-in; transition: transform 0.3s ease; }
+    .feed-image:hover { transform: scale(1.01); }
+
+    .show-comments-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--pine); font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px 0; }
+    .show-comments-btn:hover { color: var(--pine-darker); text-decoration: underline; }
+
+    .post-type-achievement { --card-accent: var(--gold); }
+    .post-type-mealshare { --card-accent: var(--lake); }
+    .post-type-motivation { --card-accent: var(--coral); }
+    .post-type-usertext { --card-accent: var(--mint); }
+
+    .modal-hint { font-size: 12px; color: var(--ink-muted); margin-bottom: 14px; line-height: 1.5; }
+
+    .subgroup-created-card { text-align: center; }
+    .sg-success-icon { font-size: 40px; margin-bottom: 8px; }
+    .sg-name { font-size: 15px; font-weight: 700; color: var(--pine); margin-bottom: 12px; }
+    .sg-instruction { font-size: 13px; color: var(--ink-muted); margin-bottom: 12px; line-height: 1.5; }
+    .sg-code-row { display: flex; align-items: center; gap: 10px; justify-content: center; background: var(--cream); border-radius: var(--r-md); padding: 12px 16px; margin-bottom: 14px; }
+    .sg-code { font-size: 20px; font-weight: 700; color: var(--pine); letter-spacing: 0.12em; flex: 1; text-align: left; }
+    .sg-note { font-size: 11px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 20px; background: rgba(91,192,150,0.06); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid rgba(91,192,150,0.15); }
+    .sg-done-btn { width: 100%; }
   `]
 })
 export class FamilyPage implements OnInit, OnDestroy {
@@ -622,11 +719,27 @@ export class FamilyPage implements OnInit, OnDestroy {
   readonly subgroupName = signal('');
   readonly subgroupDescription = signal('');
   readonly creatingSubgroup = signal(false);
+  readonly newSubgroup = signal<SubgroupCreatedDto | null>(null);
+  readonly subgroupInviteCopied = signal(false);
   readonly showTransferModal = signal(false);
   readonly transferTargetUserId = signal('');
   readonly transferring = signal(false);
   readonly removeTarget = signal<{ userId: string; fullName: string } | null>(null);
   readonly removing = signal(false);
+
+  // Post composer
+  readonly selectedPostType = signal('usertext');
+  readonly imageFile = signal<File | null>(null);
+  readonly imagePreviewUrl = signal<string | null>(null);
+  readonly uploadingImage = signal(false);
+  readonly expandedComments: Record<string, boolean> = {};
+
+  readonly postTypes = [
+    { key: 'usertext', label: 'Texto', emoji: '📝' },
+    { key: 'achievement', label: 'Logro', emoji: '🏆' },
+    { key: 'mealshare', label: 'Comida', emoji: '🥗' },
+    { key: 'motivation', label: 'Ánimo', emoji: '💪' },
+  ];
 
   // Shopping list
   readonly shoppingList = signal<ShoppingListDto | null>(null);
@@ -767,8 +880,8 @@ export class FamilyPage implements OnInit, OnDestroy {
 
     this.feed.update(f => [{
       postId: post.postId, authorUserId, authorName: post.authorName,
-      postType: post.postType, content: post.content, createdAt: post.createdAt,
-      reactions: [], comments: [], commentCount: 0,
+      postType: post.postType, content: post.content, imageUrl: post.imageUrl,
+      createdAt: post.createdAt, reactions: [], comments: [], commentCount: 0,
     }, ...f]);
 
     setTimeout(() => {
@@ -882,19 +995,41 @@ export class FamilyPage implements OnInit, OnDestroy {
     const content = this.newPostContent().trim();
     if (!content || this.posting()) return;
 
-    this.posting.set(true);
-    this.family.createPost(content).subscribe({
-      next: (post) => {
-        this.prependPost(post, this.currentUserId() ?? undefined);
-        this.newPostContent.set('');
-        this.posting.set(false);
-        this.toast.success('Publicado en el muro');
-      },
-      error: () => {
-        this.posting.set(false);
-        this.toast.error('Error al publicar');
-      }
-    });
+    const doPost = (imageUrl?: string) => {
+      this.posting.set(true);
+      this.family.createPost(content, this.selectedPostType(), imageUrl).subscribe({
+        next: (post) => {
+          this.prependPost({ ...post, imageUrl }, this.currentUserId() ?? undefined);
+          this.newPostContent.set('');
+          this.selectedPostType.set('usertext');
+          this.imageFile.set(null);
+          this.imagePreviewUrl.set(null);
+          this.posting.set(false);
+          this.toast.success('Publicado en el muro');
+        },
+        error: () => {
+          this.posting.set(false);
+          this.toast.error('Error al publicar');
+        }
+      });
+    };
+
+    const file = this.imageFile();
+    if (file) {
+      this.uploadingImage.set(true);
+      this.family.uploadPostImage(file).subscribe({
+        next: (url) => {
+          this.uploadingImage.set(false);
+          doPost(url);
+        },
+        error: () => {
+          this.uploadingImage.set(false);
+          this.toast.error('Error al subir imagen');
+        }
+      });
+    } else {
+      doPost();
+    }
   }
 
   toggleReaction(postId: string, type: string) {
@@ -989,12 +1124,12 @@ export class FamilyPage implements OnInit, OnDestroy {
 
     this.creatingSubgroup.set(true);
     this.family.createSubgroup(name, this.subgroupDescription().trim() || undefined).subscribe({
-      next: () => {
+      next: (dto) => {
         this.creatingSubgroup.set(false);
         this.showCreateSubgroup.set(false);
         this.subgroupName.set('');
         this.subgroupDescription.set('');
-        this.toast.success('Subgrupo creado');
+        this.newSubgroup.set(dto);
       },
       error: () => {
         this.creatingSubgroup.set(false);
@@ -1163,5 +1298,71 @@ export class FamilyPage implements OnInit, OnDestroy {
       'linear-gradient(135deg, var(--gold-soft), var(--gold))',
     ];
     return colors[id.charCodeAt(0) % colors.length] ?? colors[0];
+  }
+
+  visibleComments(post: FamilyPostDto) {
+    if (this.expandedComments[post.postId]) return post.comments;
+    return post.comments.slice(-2);
+  }
+
+  postTypeColor(type: string): string {
+    const map: Record<string, string> = {
+      usertext: 'var(--mint)',
+      achievement: 'var(--gold)',
+      mealshare: 'var(--lake)',
+      motivation: 'var(--coral)',
+    };
+    return map[type.toLowerCase()] ?? 'var(--mint)';
+  }
+
+  postTypeLabel(type: string): string {
+    const map: Record<string, string> = {
+      usertext: 'Texto', achievement: 'Logro', mealshare: 'Comida', motivation: 'Ánimo',
+    };
+    return map[type.toLowerCase()] ?? type;
+  }
+
+  postTypeEmoji(type: string): string {
+    const map: Record<string, string> = {
+      usertext: '📝', achievement: '🏆', mealshare: '🥗', motivation: '💪',
+    };
+    return map[type.toLowerCase()] ?? '📝';
+  }
+
+  composerPlaceholder(): string {
+    const map: Record<string, string> = {
+      usertext: '¿Qué quieres compartir hoy?',
+      achievement: 'Cuéntanos sobre tu logro...',
+      mealshare: '¿Qué comiste hoy?',
+      motivation: 'Comparte algo que motive al grupo...',
+    };
+    return map[this.selectedPostType()] ?? '¿Qué quieres compartir?';
+  }
+
+  onImageSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.imageFile.set(file);
+    const reader = new FileReader();
+    reader.onload = (e) => this.imagePreviewUrl.set(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  removeImage() {
+    this.imageFile.set(null);
+    this.imagePreviewUrl.set(null);
+  }
+
+  copySubgroupCode(code: string) {
+    navigator.clipboard.writeText(code).then(() => {
+      this.subgroupInviteCopied.set(true);
+      this.toast.success('Código copiado');
+      setTimeout(() => this.subgroupInviteCopied.set(false), 2000);
+    });
+  }
+
+  openImageFullscreen(url: string) {
+    window.open(url, '_blank');
   }
 }

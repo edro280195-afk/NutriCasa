@@ -1,14 +1,18 @@
 import { Injectable, inject, isDevMode } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, from } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
-import { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, InviteCodeDto } from '../models/family.models';
+import { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, InviteCodeDto, SubgroupCreatedDto } from '../models/family.models';
 import * as signalR from '@microsoft/signalr';
 
 @Injectable({ providedIn: 'root' })
 export class FamilyService {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly http = inject(HttpClient);
   private readonly baseUrl = isDevMode()
     ? 'https://localhost:7120'
     : 'https://nutricasa-api.onrender.com';
@@ -43,8 +47,18 @@ export class FamilyService {
     return this.api.get<GroupLeaderboardDto>(`/family/leaderboard?category=${category}`);
   }
 
-  createPost(content: string, postType = 'UserText'): Observable<PostResultDto> {
-    return this.api.post<PostResultDto>('/family/posts', { content, postType });
+  createPost(content: string, postType = 'UserText', imageUrl?: string): Observable<PostResultDto> {
+    return this.api.post<PostResultDto>('/family/posts', { content, postType, imageUrl });
+  }
+
+  uploadPostImage(file: File): Observable<string> {
+    const token = this.auth.getAccessToken();
+    const apiBase = isDevMode() ? 'https://localhost:7120/api' : 'https://nutricasa-api.onrender.com/api';
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<string>(`${apiBase}/family/posts/upload-image`, form, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).pipe(catchError(err => throwError(() => err)));
   }
 
   toggleReaction(postId: string, reactionType = 'Like'): Observable<ReactionResultDto> {
@@ -73,8 +87,8 @@ export class FamilyService {
     return this.api.post<void>('/family/invite-code/regenerate');
   }
 
-  createSubgroup(name: string, description?: string): Observable<void> {
-    return this.api.post<void>('/family/subgroups', { name, description });
+  createSubgroup(name: string, description?: string): Observable<SubgroupCreatedDto> {
+    return this.api.post<SubgroupCreatedDto>('/family/subgroups', { name, description });
   }
 
   transferOwnership(targetUserId: string): Observable<void> {
