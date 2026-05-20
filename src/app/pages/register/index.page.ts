@@ -65,6 +65,19 @@ import { AuthService } from '../../services/auth.service';
           }
         </div>
 
+        <div class="field" [class.input-error]="form.get('birthDate')?.invalid && form.get('birthDate')?.touched">
+          <label for="birthDate">Fecha de nacimiento</label>
+          <div class="field-input-wrap">
+            <input id="birthDate" type="date" formControlName="birthDate" [max]="maxBirthDate">
+          </div>
+          @if (form.get('birthDate')?.hasError('required') && form.get('birthDate')?.touched) {
+            <div class="field-error">La fecha de nacimiento es requerida</div>
+          }
+          @if (form.get('birthDate')?.hasError('tooYoung')) {
+            <div class="field-error">Debes tener al menos 18 años</div>
+          }
+        </div>
+
         <div class="field">
           <label for="groupCode">¿Tienes código de grupo? <span class="field-hint">(opcional)</span></label>
           <div class="field-input-wrap">
@@ -185,11 +198,27 @@ export class RegisterPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
+  readonly maxBirthDate: string = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 18);
+    return d.toISOString().split('T')[0];
+  })();
+
   readonly form = this.fb.group({
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
     confirmPassword: ['', Validators.required],
+    birthDate: ['', [
+      Validators.required,
+      (control) => {
+        if (!control.value) return null;
+        const birth = new Date(control.value);
+        const cutoff = new Date();
+        cutoff.setFullYear(cutoff.getFullYear() - 18);
+        return birth <= cutoff ? null : { tooYoung: true };
+      }
+    ]],
     groupCode: [''],
   }, { validators: (group) => {
     const pass = group.get('password')?.value;
@@ -208,6 +237,7 @@ export class RegisterPage {
       fullName: this.form.value.fullName!,
       email: this.form.value.email!,
       password: this.form.value.password!,
+      birthDate: this.form.value.birthDate!,
       groupCode: this.form.value.groupCode || undefined,
     }).subscribe({
       next: () => this.router.navigate(['/onboarding']),
