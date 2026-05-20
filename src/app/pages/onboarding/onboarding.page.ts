@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { OnboardingService } from '../../services/onboarding.service';
 import { AuthService } from '../../services/auth.service';
 import { LottieAnimationComponent } from '../../components/lottie-animation/lottie-animation.component';
+import { NcToastService } from '../../shared/components/nc-toast.service';
 import type {
   GroupRequest, BasicDataRequest, MetricsRequest, BodyTypeRequest,
   ActivityRequest, BudgetModeRequest, MedicalProfileRequest,
@@ -27,21 +28,23 @@ const OVERRIDE_STEPS = [
   imports: [ReactiveFormsModule, LottieAnimationComponent],
   template: `
   <div class="shell">
-    <div class="wiz-header">
-      <div class="wiz-top">
-        <button class="wiz-back" [class.invisible]="step() === 0 || step() === currentSteps().length - 1" (click)="prevStep()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-          </svg>
-          Atrás
-        </button>
-        <div class="wiz-step-counter">Paso <strong>{{ step() + 1 }}</strong> de {{ currentSteps().length - 1 }}</div>
-        <button class="wiz-skip" [class.invisible]="step() === currentSteps().length - 1" (click)="skipStep()">Omitir</button>
+    @if (step() < currentSteps().length - 1) {
+      <div class="wiz-header">
+        <div class="wiz-top">
+          <button class="wiz-back" [class.invisible]="step() === 0" (click)="prevStep()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Atrás
+          </button>
+          <div class="wiz-step-counter">Paso <strong>{{ step() + 1 }}</strong> de {{ currentSteps().length - 1 }}</div>
+          <button class="wiz-skip" (click)="skipStep()">Omitir</button>
+        </div>
+        <div class="wiz-progress">
+          <div class="wiz-progress-fill" [style.width.%]="((step() + 1) / (currentSteps().length - 1)) * 100"></div>
+        </div>
       </div>
-      <div class="wiz-progress">
-        <div class="wiz-progress-fill" [style.width.%]="((step() + 1) / currentSteps().length) * 100"></div>
-      </div>
-    </div>
+    }
 
     <div class="wiz-stage">
       <!-- STEP 0: Group -->
@@ -730,6 +733,9 @@ export class OnboardingPage {
   private readonly onboarding = inject(OnboardingService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toast = inject(NcToastService);
+
+  private onboardingFinished = false;
 
   readonly OVERRIDE_STEPS = OVERRIDE_STEPS;
   readonly step = signal(0);
@@ -884,6 +890,10 @@ export class OnboardingPage {
   }
 
   private saveToStorage() {
+    if (this.onboardingFinished) {
+      try { localStorage.removeItem(this.STORAGE_KEY); } catch {}
+      return;
+    }
     const data = {
       step: this.step(),
       groupAction: this.groupAction(),
@@ -1129,6 +1139,7 @@ export class OnboardingPage {
       next: () => {
         this.auth.loadProfile().subscribe(() => {
           this.submitting.set(false);
+          this.onboardingFinished = true;
           this.step.set(this.currentSteps().length - 1);
           try { localStorage.removeItem(this.STORAGE_KEY); } catch {}
           setTimeout(() => {
@@ -1137,9 +1148,9 @@ export class OnboardingPage {
           }, 2000);
         });
       },
-      error: () => {
+      error: (err: any) => {
         this.submitting.set(false);
-        this.router.navigate(['/dashboard']);
+        this.toast.error(err.error?.message || 'Error al completar el registro. Inténtalo de nuevo.');
       },
     });
   }

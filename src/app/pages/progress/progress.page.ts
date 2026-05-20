@@ -278,6 +278,9 @@ export class ProgressPage implements OnInit {
         }));
         this.planDayMacros.set(bars);
       },
+      error: () => {
+        this.planDayMacros.set([]);
+      }
     });
   }
 

@@ -507,6 +507,9 @@ export class PlanPage {
         this.plan.set(data);
         this.loadMealLogs(data);
       },
+      error: () => {
+        this.plan.set(null);
+      }
     });
   }
 

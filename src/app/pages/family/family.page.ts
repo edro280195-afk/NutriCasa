@@ -250,7 +250,7 @@ import { gsap } from 'gsap';
 
         <div class="feed">
           @for (post of feed(); track post.postId) {
-            <div class="feed-card" [attr.data-post-id]="post.postId">
+            <div class="feed-card" [attr.data-post-id]="post.postId" [style.--card-accent]="getColor(post.authorUserId || post.postId)">
               <div class="feed-header-row">
                 <div class="feed-av" [style.background]="getColor(post.authorUserId || post.postId)">{{ post.authorName.charAt(0) }}</div>
                 <div class="feed-header-info">
@@ -464,59 +464,74 @@ import { gsap } from 'gsap';
       .print-dates { font-size: 13px; color: #666; margin-top: 2px; }
     }
 
-    .composer { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
-    .composer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--mint), var(--lake)); }
-    .composer-input { width: 100%; border: none; background: transparent; resize: none; font-family: inherit; font-size: 14px; color: var(--ink); outline: none; line-height: 1.5; }
+    .composer { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-xl); padding: 18px; margin-bottom: 24px; box-shadow: 0 4px 20px -2px rgba(15, 61, 46, 0.03); position: relative; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
+    .composer:focus-within { border-color: var(--mint); box-shadow: 0 6px 24px rgba(91, 192, 150, 0.1); }
+    .composer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--mint), var(--lake), var(--gold)); }
+    .composer-input { width: 100%; border: none; background: transparent; resize: none; font-family: inherit; font-size: 14px; color: var(--ink); outline: none; line-height: 1.6; }
     .composer-input::placeholder { color: var(--ink-soft); }
-    .composer-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .composer-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
     .composer-count { font-size: 11px; color: var(--ink-soft); }
     .btn-primary { background: var(--pine); color: var(--cream); border: none; padding: 8px 20px; border-radius: var(--r-pill); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .btn-primary:disabled { opacity: 0.4; cursor: default; }
     .btn-primary:not(:disabled):hover { background: var(--pine-darker); }
 
-    .feed { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
-    .feed-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; }
-    .feed-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-    .feed-header-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .feed-av { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--pine-darker); flex-shrink: 0; }
+    .feed { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+    .feed-card { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-xl); padding: 20px; box-shadow: 0 4px 20px -2px rgba(15, 61, 46, 0.03), 0 2px 6px -1px rgba(15, 61, 46, 0.02); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease; overflow: hidden; }
+    .feed-card::after { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: var(--card-accent, var(--mint)); border-radius: 4px 0 0 4px; }
+    .feed-card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(15, 61, 46, 0.06), 0 4px 12px rgba(15, 61, 46, 0.03); border-color: rgba(91, 192, 150, 0.2); }
+    .feed-header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .feed-av { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--cream); flex-shrink: 0; box-shadow: inset 0 -2px 4px rgba(0,0,0,0.15); text-transform: uppercase; }
     .feed-header-info { display: flex; flex-direction: column; flex: 1; }
-    .feed-author { font-size: 13px; font-weight: 600; color: var(--ink); }
-    .feed-time { font-size: 11px; color: var(--ink-muted); }
-    .feed-delete { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .feed-author { font-size: 14px; font-weight: 600; color: var(--ink); }
+    .feed-time { font-size: 11px; color: var(--ink-muted); margin-top: 1px; }
+    .feed-delete { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
     .feed-delete:hover { background: var(--bg); color: var(--coral); }
-    .feed-content { font-size: 14px; color: var(--ink); line-height: 1.6; margin-bottom: 14px; white-space: pre-wrap; }
+    .feed-content { font-size: 14.5px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 16px; white-space: pre-wrap; padding-left: 2px; }
 
-    .feed-reactions { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-bottom: 12px; position: relative; }
+    .feed-reactions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); margin-bottom: 16px; position: relative; }
     .reaction-bubbles { display: flex; gap: 6px; flex-wrap: wrap; }
-    .reaction-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); font-size: 12px; color: var(--ink-muted); cursor: pointer; transition: all 0.15s; }
-    .reaction-chip.active { background: var(--mint-soft); border-color: var(--mint); color: var(--pine); font-weight: 600; }
-    .reaction-emoji { font-size: 14px; }
+    .reaction-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); font-size: 12px; font-weight: 500; color: var(--ink-soft); cursor: pointer; transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .reaction-chip:hover { transform: scale(1.08); }
+    .reaction-chip.active { border-color: transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .reaction-chip-like.active { background: rgba(91, 192, 150, 0.15); color: var(--pine); border: 1px solid rgba(91, 192, 150, 0.3); }
+    .reaction-chip-fire.active { background: rgba(232, 134, 107, 0.15); color: var(--coral); border: 1px solid rgba(232, 134, 107, 0.3); }
+    .reaction-chip-heart.active { background: rgba(229, 115, 115, 0.15); color: #d32f2f; border: 1px solid rgba(229, 115, 115, 0.3); }
+    .reaction-chip-clap.active { background: rgba(255, 193, 7, 0.15); color: #b78103; border: 1px solid rgba(255, 193, 7, 0.3); }
+    .reaction-chip-wow.active { background: rgba(91, 163, 208, 0.15); color: var(--lake); border: 1px solid rgba(91, 163, 208, 0.3); }
+    .reaction-emoji { font-size: 14px; transition: transform 0.2s; }
+    
+    @keyframes emoji-bounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3) translateY(-2px); }
+    }
+    .reaction-chip:hover .reaction-emoji { animation: emoji-bounce 0.4s ease-out; }
 
     .reaction-container { position: relative; display: inline-block; }
-    .react-trigger-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--ink-muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .react-trigger-btn:hover { background: var(--line); color: var(--ink); }
-    .react-trigger-btn svg { color: var(--ink-soft); }
+    .react-trigger-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--ink-muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.25s; }
+    .react-trigger-btn:hover { background: var(--line); color: var(--ink); transform: scale(1.02); }
+    .react-trigger-btn svg { color: var(--ink-soft); transition: transform 0.2s; }
+    .react-trigger-btn:hover svg { transform: rotate(-8deg) scale(1.1); }
 
-    .reaction-menu { position: absolute; bottom: 100%; left: 0; transform: translateY(-8px); background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 4px 8px; display: flex; gap: 6px; box-shadow: var(--shadow-lg); z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s; }
-    .reaction-menu.show { pointer-events: auto; opacity: 1; transform: translateY(-8px) scale(1); }
-    .reaction-menu-btn { width: 34px; height: 34px; border-radius: 50%; border: none; background: transparent; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .reaction-menu-btn:hover { transform: scale(1.4) translateY(-4px); }
+    .reaction-menu { position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, -10px) scale(0.9); background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: var(--r-pill); padding: 6px 12px; display: flex; gap: 8px; box-shadow: 0 10px 30px -5px rgba(15, 61, 46, 0.15), 0 4px 12px -2px rgba(15, 61, 46, 0.05); z-index: 110; pointer-events: none; opacity: 0; transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .reaction-menu.show { pointer-events: auto; opacity: 1; transform: translate(-50%, -10px) scale(1); }
+    .reaction-menu-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: transparent; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s; }
+    .reaction-menu-btn:hover { transform: scale(1.4) translateY(-6px); background: rgba(15, 61, 46, 0.05); }
 
-    .feed-comments { display: flex; flex-direction: column; gap: 8px; }
-    .comment-row { background: var(--bg); border-radius: var(--r-md); padding: 8px 12px; font-size: 13px; color: var(--ink); position: relative; display: flex; flex-direction: column; gap: 2px; transition: background-color 0.2s; }
-    .comment-row:hover { background: var(--line); }
-    .comment-header { display: flex; justify-content: space-between; align-items: baseline; }
-    .comment-author { font-weight: 700; color: var(--pine); font-size: 12px; }
-    .comment-text { line-height: 1.5; color: var(--ink); }
-    .comment-delete { background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 2px; opacity: 0; transition: opacity 0.15s; display: flex; align-items: center; justify-content: center; }
+    .feed-comments { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
+    .comment-row { background: var(--bg); border-radius: var(--r-md); padding: 10px 14px; font-size: 13px; color: var(--ink); position: relative; display: flex; flex-direction: column; gap: 4px; border-left: 3px solid rgba(91, 192, 150, 0.3); transition: background-color 0.2s, border-left-color 0.2s; }
+    .comment-row:hover { background: var(--line); border-left-color: var(--mint); }
+    .comment-header { display: flex; justify-content: space-between; align-items: center; }
+    .comment-author { font-weight: 700; color: var(--pine-darker); font-size: 12.5px; }
+    .comment-text { line-height: 1.5; color: var(--ink-soft); }
+    .comment-delete { background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 4px; opacity: 0; transition: opacity 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center; }
     .comment-row:hover .comment-delete { opacity: 1; }
     .comment-delete:hover { color: var(--coral); }
-    .comment-composer { display: flex; gap: 8px; margin-top: 8px; position: relative; }
-    .comment-composer input { flex: 1; border: 1px solid var(--line); background: var(--paper); border-radius: var(--r-pill); padding: 8px 36px 8px 16px; font-size: 13px; font-family: inherit; outline: none; color: var(--ink); transition: border-color 0.2s; }
-    .comment-composer input:focus { border-color: var(--mint); }
-    .comment-send { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--pine); color: var(--cream); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+    .comment-composer { display: flex; gap: 10px; margin-top: 12px; position: relative; }
+    .comment-composer input { flex: 1; border: 1px solid var(--line); background: var(--paper); border-radius: var(--r-pill); padding: 10px 44px 10px 18px; font-size: 13px; font-family: inherit; outline: none; color: var(--ink); transition: border-color 0.2s, box-shadow 0.2s; }
+    .comment-composer input:focus { border-color: var(--mint); box-shadow: 0 0 0 3px rgba(91, 192, 150, 0.15); }
+    .comment-send { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--pine); color: var(--cream); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.2s; }
     .comment-send:disabled { background: transparent; color: var(--ink-soft); cursor: default; }
-    .comment-send:not(:disabled):hover { background: var(--pine-darker); }
+    .comment-send:not(:disabled):hover { background: var(--pine-darker); transform: translateY(-50%) scale(1.05); }
 
     .lb-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
     .lb-tab { flex: 1; min-width: 0; padding: 8px 6px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--paper); font-size: 11px; font-weight: 600; color: var(--ink-muted); cursor: pointer; text-align: center; transition: all 0.2s; white-space: nowrap; }
@@ -627,13 +642,25 @@ export class FamilyPage implements OnInit, OnDestroy {
   }
 
   private loadData() {
-    this.family.getMembers().subscribe(m => {
-      this.members.set(m);
-      const me = m.find(x => x.userId === this.currentUserId());
-      this.currentMemberRole.set(me?.role ?? '');
+    this.family.getMembers().subscribe({
+      next: (m) => {
+        this.members.set(m);
+        const me = m.find(x => x.userId === this.currentUserId());
+        this.currentMemberRole.set(me?.role ?? '');
+      },
+      error: () => {}
     });
-    this.family.getFeed().subscribe(f => this.feed.set(f));
-    this.family.getStats().subscribe(s => { this.stats.set(s); this.loading.set(false); });
+    this.family.getFeed().subscribe({
+      next: (f) => this.feed.set(f),
+      error: () => {}
+    });
+    this.family.getStats().subscribe({
+      next: (s) => {
+        this.stats.set(s);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
     this.loadShoppingList();
   }
 
@@ -908,16 +935,22 @@ export class FamilyPage implements OnInit, OnDestroy {
   switchLeaderboard(category: string) {
     this.leaderboardCategory.set(category);
     this.leaderboardLoading.set(true);
-    this.family.getLeaderboard(category).subscribe(d => {
-      this.leaderboard.set(d);
-      this.leaderboardLoading.set(false);
+    this.family.getLeaderboard(category).subscribe({
+      next: (d) => {
+        this.leaderboard.set(d);
+        this.leaderboardLoading.set(false);
+      },
+      error: () => this.leaderboardLoading.set(false)
     });
   }
 
   // ── Invite Code ──
 
   loadInviteCode() {
-    this.family.getInviteCode().subscribe(ic => this.inviteCode.set(ic));
+    this.family.getInviteCode().subscribe({
+      next: (ic) => this.inviteCode.set(ic),
+      error: () => {}
+    });
   }
 
   copyInviteCode(code: string) {
@@ -1115,7 +1148,8 @@ export class FamilyPage implements OnInit, OnDestroy {
     return map[role] || role;
   }
 
-  getColor(id: string): string {
+  getColor(id?: string): string {
+    if (!id) return 'linear-gradient(135deg, var(--mint), var(--lake))';
     const colors = [
       'linear-gradient(135deg, var(--mint), var(--lake))',
       'linear-gradient(135deg, var(--coral-soft), var(--coral))',
@@ -1123,6 +1157,6 @@ export class FamilyPage implements OnInit, OnDestroy {
       'linear-gradient(135deg, var(--lake-light), var(--lake))',
       'linear-gradient(135deg, var(--gold-soft), var(--gold))',
     ];
-    return colors[id?.charCodeAt(0) % colors.length] ?? colors[0];
+    return colors[id.charCodeAt(0) % colors.length] ?? colors[0];
   }
 }
