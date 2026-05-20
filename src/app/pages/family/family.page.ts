@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -9,6 +9,7 @@ import { TimeAgoPipe } from '../../pipes/time-ago.pipe';
 import { NcToastService } from '../../shared/components/nc-toast.service';
 import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, LeaderboardEntryDto, InviteCodeDto } from '../../models/family.models';
 import type { ShoppingListDto } from '../../models/shopping-list.models';
+import { gsap } from 'gsap';
 
 @Component({
   selector: 'app-family',
@@ -174,7 +175,7 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
         </div>
       }
 
-      <div class="family-section">
+      <div class="family-section sl-section">
         <div class="section-head">
           <h2 class="section-title">Lista de compras</h2>
           <button class="btn-sm" (click)="loadShoppingList()" [disabled]="shoppingListLoading()">
@@ -187,6 +188,11 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
         } @else if (shoppingList(); as sl) {
           @if (sl.items.length > 0) {
             <div class="sl-card">
+              <div class="print-header">
+                <div class="print-logo">NutriCasa Hub</div>
+                <div class="print-title">Lista de compras consolidada</div>
+                <div class="print-dates">Semana: {{ formatIsoDate(sl.weekStart) }} al {{ formatIsoDate(sl.weekEnd) }}</div>
+              </div>
               @for (item of sl.items; track item.itemId) {
                 <div class="sl-item" [class.purchased]="item.isPurchased">
                   <button class="sl-check" (click)="toggleItem(item.itemId)" [class.checked]="item.isPurchased">
@@ -205,6 +211,7 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
                 <div class="sl-total">Total estimado: <strong>{{ '$' }}{{ sl.totalCost }} MXN</strong></div>
               }
               <div class="sl-actions">
+                <button class="btn-sm btn-outline" (click)="exportPdf(sl)">Exportar PDF</button>
                 <button class="btn-sm" (click)="shareWhatsApp(sl)">Compartir en WhatsApp</button>
               </div>
             </div>
@@ -228,7 +235,7 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
 
       <div class="family-section">
         <div class="section-head">
-          <h2 class="section-title">Muro</h2>
+          <h2 class="section-title">Muro familiar</h2>
         </div>
 
         <div class="composer">
@@ -243,7 +250,7 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
 
         <div class="feed">
           @for (post of feed(); track post.postId) {
-            <div class="feed-card">
+            <div class="feed-card" [attr.data-post-id]="post.postId">
               <div class="feed-header-row">
                 <div class="feed-av" [style.background]="getColor(post.authorUserId || post.postId)">{{ post.authorName.charAt(0) }}</div>
                 <div class="feed-header-info">
@@ -259,37 +266,45 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
               <div class="feed-content">{{ post.content }}</div>
 
               <div class="feed-reactions">
-                @if (post.reactions.length > 0) {
-                  <div class="reaction-bubbles">
-                    @for (r of post.reactions; track r.type) {
-                      @if (r.count > 0) {
-                        <button class="reaction-chip" [class.active]="r.hasCurrentUserReacted" (click)="toggleReaction(post.postId, r.type)">
-                          <span class="reaction-emoji">{{ reactionEmoji(r.type) }}</span>
-                          {{ r.count }}
-                        </button>
-                      }
+                <div class="reaction-bubbles">
+                  @for (r of post.reactions; track r.type) {
+                    @if (r.count > 0) {
+                      <button class="reaction-chip reaction-chip-{{ r.type.toLowerCase() }}" [class.active]="r.hasCurrentUserReacted" (click)="toggleReaction(post.postId, r.type)">
+                        <span class="reaction-emoji">{{ reactionEmoji(r.type) }}</span>
+                        {{ r.count }}
+                      </button>
+                    }
+                  }
+                </div>
+
+                <div class="reaction-container">
+                  <button class="react-trigger-btn" (click)="toggleReactionMenu(post.postId, $event)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+                    Reaccionar
+                  </button>
+
+                  <div class="reaction-menu" [class.show]="activeReactionMenuId() === post.postId" (click)="$event.stopPropagation()">
+                    @for (emoji of availableReactions; track emoji) {
+                      <button class="reaction-menu-btn" (click)="triggerReactionWithAnim(post.postId, emoji, $event)" [title]="emoji">
+                        {{ reactionEmoji(emoji) }}
+                      </button>
                     }
                   </div>
-                }
-                <div class="reaction-actions">
-                  @for (emoji of availableReactions; track emoji) {
-                    <button class="reaction-btn" (click)="toggleReaction(post.postId, emoji)" [title]="emoji">
-                      {{ reactionEmoji(emoji) }}
-                    </button>
-                  }
                 </div>
               </div>
 
               <div class="feed-comments">
                 @for (c of post.comments; track c.commentId) {
-                  <div class="comment-row">
-                    <strong>{{ c.authorName }}</strong>
+                  <div class="comment-row" [attr.data-comment-id]="c.commentId">
+                    <div class="comment-header">
+                      <span class="comment-author">{{ c.authorName }}</span>
+                      @if (c.isOwner) {
+                        <button class="comment-delete" (click)="deleteComment(post.postId, c.commentId)" title="Eliminar comentario">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+                        </button>
+                      }
+                    </div>
                     <span class="comment-text">{{ c.content }}</span>
-                    @if (c.isOwner) {
-                      <button class="comment-delete" (click)="deleteComment(post.postId, c.commentId)">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
-                      </button>
-                    }
                   </div>
                 }
                 <div class="comment-composer">
@@ -431,7 +446,26 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
     .sl-empty { text-align: center; padding: 20px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); margin-bottom: 16px; }
     .sl-empty p { font-size: 13px; color: var(--ink-muted); margin-bottom: 12px; }
 
-    .composer { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; margin-bottom: 16px; }
+    .print-header { display: none; }
+    @media print {
+      body { background: white !important; color: black !important; }
+      .page-header, .family-hero, .family-stats, .family-section:not(.sl-section), .sl-actions, .modal-backdrop, .composer, .feed, .section-head button {
+        display: none !important;
+      }
+      .sl-section { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important; }
+      .sl-card { border: none !important; box-shadow: none !important; padding: 0 !important; background: transparent !important; }
+      .sl-item { border-bottom: 1px solid #ccc !important; padding: 10px 0 !important; font-size: 14px !important; opacity: 1 !important; }
+      .sl-item.purchased .sl-name { text-decoration: none !important; }
+      .sl-check { border: 2px solid #000 !important; background: transparent !important; color: #000 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .sl-check.checked { background: #000 !important; color: white !important; }
+      .print-header { display: block !important; margin-bottom: 24px; border-bottom: 2px solid #1b4332; padding-bottom: 12px; }
+      .print-logo { font-family: var(--display); font-size: 26px; font-weight: 700; color: #1b4332; }
+      .print-title { font-size: 18px; color: #333; margin-top: 4px; font-weight: 600; }
+      .print-dates { font-size: 13px; color: #666; margin-top: 2px; }
+    }
+
+    .composer { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
+    .composer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--mint), var(--lake)); }
     .composer-input { width: 100%; border: none; background: transparent; resize: none; font-family: inherit; font-size: 14px; color: var(--ink); outline: none; line-height: 1.5; }
     .composer-input::placeholder { color: var(--ink-soft); }
     .composer-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
@@ -441,7 +475,8 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
     .btn-primary:not(:disabled):hover { background: var(--pine-darker); }
 
     .feed { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
-    .feed-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; }
+    .feed-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; }
+    .feed-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
     .feed-header-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .feed-av { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--pine-darker); flex-shrink: 0; }
     .feed-header-info { display: flex; flex-direction: column; flex: 1; }
@@ -449,28 +484,38 @@ import type { ShoppingListDto } from '../../models/shopping-list.models';
     .feed-time { font-size: 11px; color: var(--ink-muted); }
     .feed-delete { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .feed-delete:hover { background: var(--bg); color: var(--coral); }
-    .feed-content { font-size: 14px; color: var(--ink); line-height: 1.6; margin-bottom: 12px; white-space: pre-wrap; }
+    .feed-content { font-size: 14px; color: var(--ink); line-height: 1.6; margin-bottom: 14px; white-space: pre-wrap; }
 
-    .reaction-bubbles { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .feed-reactions { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-bottom: 12px; position: relative; }
+    .reaction-bubbles { display: flex; gap: 6px; flex-wrap: wrap; }
     .reaction-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); font-size: 12px; color: var(--ink-muted); cursor: pointer; transition: all 0.15s; }
     .reaction-chip.active { background: var(--mint-soft); border-color: var(--mint); color: var(--pine); font-weight: 600; }
     .reaction-emoji { font-size: 14px; }
-    .reaction-actions { display: flex; gap: 4px; padding: 8px 0; border-top: 1px solid var(--line); }
-    .reaction-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: transparent; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: transform 0.15s; }
-    .reaction-btn:hover { transform: scale(1.3); background: var(--bg); }
 
-    .feed-comments { border-top: 1px solid var(--line); padding-top: 10px; }
-    .comment-row { font-size: 13px; color: var(--ink-light); padding: 4px 0; display: flex; align-items: baseline; gap: 6px; }
-    .comment-row strong { font-size: 12px; color: var(--ink); white-space: nowrap; }
-    .comment-text { flex: 1; }
-    .comment-delete { background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 2px; opacity: 0; transition: opacity 0.15s; }
+    .reaction-container { position: relative; display: inline-block; }
+    .react-trigger-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--ink-muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .react-trigger-btn:hover { background: var(--line); color: var(--ink); }
+    .react-trigger-btn svg { color: var(--ink-soft); }
+
+    .reaction-menu { position: absolute; bottom: 100%; left: 0; transform: translateY(-8px); background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 4px 8px; display: flex; gap: 6px; box-shadow: var(--shadow-lg); z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s; }
+    .reaction-menu.show { pointer-events: auto; opacity: 1; transform: translateY(-8px) scale(1); }
+    .reaction-menu-btn { width: 34px; height: 34px; border-radius: 50%; border: none; background: transparent; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .reaction-menu-btn:hover { transform: scale(1.4) translateY(-4px); }
+
+    .feed-comments { display: flex; flex-direction: column; gap: 8px; }
+    .comment-row { background: var(--bg); border-radius: var(--r-md); padding: 8px 12px; font-size: 13px; color: var(--ink); position: relative; display: flex; flex-direction: column; gap: 2px; transition: background-color 0.2s; }
+    .comment-row:hover { background: var(--line); }
+    .comment-header { display: flex; justify-content: space-between; align-items: baseline; }
+    .comment-author { font-weight: 700; color: var(--pine); font-size: 12px; }
+    .comment-text { line-height: 1.5; color: var(--ink); }
+    .comment-delete { background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 2px; opacity: 0; transition: opacity 0.15s; display: flex; align-items: center; justify-content: center; }
     .comment-row:hover .comment-delete { opacity: 1; }
     .comment-delete:hover { color: var(--coral); }
-    .comment-composer { display: flex; gap: 8px; margin-top: 8px; }
-    .comment-composer input { flex: 1; border: none; background: var(--bg); border-radius: var(--r-pill); padding: 8px 12px; font-size: 12px; font-family: inherit; outline: none; color: var(--ink); }
-    .comment-composer input::placeholder { color: var(--ink-soft); }
-    .comment-send { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--pine); color: var(--cream); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .comment-send:disabled { opacity: 0.4; }
+    .comment-composer { display: flex; gap: 8px; margin-top: 8px; position: relative; }
+    .comment-composer input { flex: 1; border: 1px solid var(--line); background: var(--paper); border-radius: var(--r-pill); padding: 8px 36px 8px 16px; font-size: 13px; font-family: inherit; outline: none; color: var(--ink); transition: border-color 0.2s; }
+    .comment-composer input:focus { border-color: var(--mint); }
+    .comment-send { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--pine); color: var(--cream); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+    .comment-send:disabled { background: transparent; color: var(--ink-soft); cursor: default; }
     .comment-send:not(:disabled):hover { background: var(--pine-darker); }
 
     .lb-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -532,6 +577,7 @@ export class FamilyPage implements OnInit, OnDestroy {
   readonly online = signal(false);
   readonly posting = signal(false);
   readonly newPostContent = signal('');
+  readonly activeReactionMenuId = signal<string | null>(null);
 
   readonly currentUserId = signal<string | null>(null);
   readonly currentMemberRole = signal<string>('');
@@ -591,6 +637,80 @@ export class FamilyPage implements OnInit, OnDestroy {
     this.loadShoppingList();
   }
 
+  @HostListener('document:click')
+  closeAllReactionMenus() {
+    this.activeReactionMenuId.set(null);
+  }
+
+  toggleReactionMenu(postId: string, event: MouseEvent) {
+    event.stopPropagation();
+    if (this.activeReactionMenuId() === postId) {
+      this.activeReactionMenuId.set(null);
+    } else {
+      this.activeReactionMenuId.set(postId);
+      setTimeout(() => {
+        const menu = document.querySelector(`[data-post-id="${postId}"] .reaction-menu`);
+        if (menu) {
+          const items = menu.querySelectorAll('.reaction-menu-btn');
+          gsap.fromTo(items,
+            { scale: 0, opacity: 0, y: 10 },
+            { scale: 1, opacity: 1, y: 0, duration: 0.25, stagger: 0.04, ease: 'back.out(1.5)' }
+          );
+        }
+      }, 10);
+    }
+  }
+
+  triggerReactionWithAnim(postId: string, emojiType: string, event: MouseEvent) {
+    this.toggleReaction(postId, emojiType);
+    this.createEmojiBurst(event.clientX, event.clientY, this.reactionEmoji(emojiType));
+    this.activeReactionMenuId.set(null);
+  }
+
+  createEmojiBurst(x: number, y: number, emoji: string) {
+    const burstContainer = document.createElement('div');
+    burstContainer.style.position = 'fixed';
+    burstContainer.style.left = `${x}px`;
+    burstContainer.style.top = `${y}px`;
+    burstContainer.style.pointerEvents = 'none';
+    burstContainer.style.zIndex = '9999';
+    document.body.appendChild(burstContainer);
+
+    const count = 12;
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('span');
+      el.innerText = emoji;
+      el.style.position = 'absolute';
+      el.style.fontSize = `${gsap.utils.random(18, 30)}px`;
+      el.style.userSelect = 'none';
+      burstContainer.appendChild(el);
+
+      const angle = gsap.utils.random(0, Math.PI * 2);
+      const velocity = gsap.utils.random(50, 150);
+      const destX = Math.cos(angle) * velocity;
+      const destY = Math.sin(angle) * velocity - gsap.utils.random(40, 100);
+
+      gsap.fromTo(el,
+        { x: 0, y: 0, opacity: 1, scale: 0.5 },
+        {
+          x: destX,
+          y: destY,
+          opacity: 0,
+          scale: gsap.utils.random(1.2, 1.8),
+          rotation: gsap.utils.random(-180, 180),
+          duration: gsap.utils.random(0.8, 1.2),
+          ease: 'power2.out',
+          onComplete: () => {
+            el.remove();
+            if (burstContainer.children.length === 0) {
+              burstContainer.remove();
+            }
+          }
+        }
+      );
+    }
+  }
+
   private async connectSignalR() {
     try {
       await this.family.connect();
@@ -601,6 +721,8 @@ export class FamilyPage implements OnInit, OnDestroy {
         this.family.onPostCreated.subscribe(p => this.prependPost(p)),
         this.family.onReactionToggled.subscribe(d => this.updateReaction(d.postId, d.reaction)),
         this.family.onCommentAdded.subscribe(d => this.appendComment(d.postId, d.comment)),
+        this.family.onPostDeleted.subscribe(postId => this.removePostFromFeed(postId)),
+        this.family.onCommentDeleted.subscribe(d => this.removeCommentFromFeed(d.postId, d.commentId)),
       );
     } catch {
       this.online.set(false);
@@ -608,11 +730,24 @@ export class FamilyPage implements OnInit, OnDestroy {
   }
 
   private prependPost(post: PostResultDto) {
+    const exists = this.feed().some(p => p.postId === post.postId);
+    if (exists) return;
+
     this.feed.update(f => [{
       postId: post.postId, authorUserId: undefined, authorName: post.authorName,
       postType: post.postType, content: post.content, createdAt: post.createdAt,
       reactions: [], comments: [], commentCount: 0,
     }, ...f]);
+
+    setTimeout(() => {
+      const card = document.querySelector(`[data-post-id="${post.postId}"]`);
+      if (card) {
+        gsap.fromTo(card,
+          { height: 0, opacity: 0, y: -20, scale: 0.95 },
+          { height: 'auto', opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'power2.out' }
+        );
+      }
+    }, 50);
   }
 
   private updateReaction(postId: string, reaction: ReactionResultDto) {
@@ -627,17 +762,88 @@ export class FamilyPage implements OnInit, OnDestroy {
       }
       return { ...p };
     }));
+
+    if (reaction.hasReacted) {
+      setTimeout(() => {
+        const chip = document.querySelector(`[data-post-id="${postId}"] .reaction-chip-${reaction.reactionType.toLowerCase()}`);
+        if (chip) {
+          const rect = chip.getBoundingClientRect();
+          this.createEmojiBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, this.reactionEmoji(reaction.reactionType));
+        }
+      }, 50);
+    }
   }
 
   private appendComment(postId: string, comment: CommentResultDto) {
     this.feed.update(f => f.map(p => {
       if (p.postId !== postId) return p;
+      const commentExists = p.comments.some(c => c.commentId === comment.commentId);
+      if (commentExists) return p;
+
       return {
         ...p,
         comments: [...p.comments, { ...comment, isOwner: comment.userId === this.currentUserId() }],
         commentCount: p.commentCount + 1,
       };
     }));
+
+    setTimeout(() => {
+      const commentEl = document.querySelector(`[data-comment-id="${comment.commentId}"]`);
+      if (commentEl) {
+        gsap.fromTo(commentEl,
+          { opacity: 0, y: 10, scale: 0.95 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: 'back.out(1.2)' }
+        );
+      }
+    }, 50);
+  }
+
+  private removePostFromFeed(postId: string) {
+    const card = document.querySelector(`[data-post-id="${postId}"]`);
+    if (card) {
+      gsap.to(card, {
+        opacity: 0,
+        y: -10,
+        height: 0,
+        marginBottom: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+        borderWidth: 0,
+        duration: 0.35,
+        ease: 'power2.out',
+        onComplete: () => {
+          this.feed.update(f => f.filter(p => p.postId !== postId));
+        }
+      });
+    } else {
+      this.feed.update(f => f.filter(p => p.postId !== postId));
+    }
+  }
+
+  private removeCommentFromFeed(postId: string, commentId: string) {
+    const commentEl = document.querySelector(`[data-comment-id="${commentId}"]`);
+    if (commentEl) {
+      gsap.to(commentEl, {
+        opacity: 0,
+        x: -10,
+        height: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+        duration: 0.3,
+        ease: 'power2.out',
+        onComplete: () => {
+          this.feed.update(f => f.map(p => {
+            if (p.postId !== postId) return p;
+            return { ...p, comments: p.comments.filter(c => c.commentId !== commentId), commentCount: Math.max(0, p.commentCount - 1) };
+          }));
+        }
+      });
+    } else {
+      this.feed.update(f => f.map(p => {
+        if (p.postId !== postId) return p;
+        return { ...p, comments: p.comments.filter(c => c.commentId !== commentId), commentCount: Math.max(0, p.commentCount - 1) };
+      }));
+    }
   }
 
   submitPost() {
@@ -670,7 +876,8 @@ export class FamilyPage implements OnInit, OnDestroy {
     if (!content) return;
 
     this.family.addComment(postId, content).subscribe({
-      next: () => {
+      next: (comment) => {
+        this.appendComment(postId, comment);
         this.commentText[postId] = '';
         input.value = '';
         input.focus();
@@ -682,7 +889,7 @@ export class FamilyPage implements OnInit, OnDestroy {
   deletePost(postId: string) {
     this.family.deletePost(postId).subscribe({
       next: () => {
-        this.feed.update(f => f.filter(p => p.postId !== postId));
+        this.removePostFromFeed(postId);
         this.toast.success('Post eliminado');
       },
       error: () => this.toast.error('Error al eliminar')
@@ -692,10 +899,7 @@ export class FamilyPage implements OnInit, OnDestroy {
   deleteComment(postId: string, commentId: string) {
     this.family.deleteComment(postId, commentId).subscribe({
       next: () => {
-        this.feed.update(f => f.map(p => {
-          if (p.postId !== postId) return p;
-          return { ...p, comments: p.comments.filter(c => c.commentId !== commentId), commentCount: Math.max(0, p.commentCount - 1) };
-        }));
+        this.removeCommentFromFeed(postId, commentId);
       },
       error: () => this.toast.error('Error al eliminar comentario')
     });
@@ -874,6 +1078,19 @@ export class FamilyPage implements OnInit, OnDestroy {
   shareWhatsApp(list: ShoppingListDto) {
     const text = this.shoppingListService.buildWhatsAppText(list);
     this.shoppingListService.openWhatsApp(text);
+  }
+
+  exportPdf(list: ShoppingListDto) {
+    window.print();
+  }
+
+  formatIsoDate(isoStr: string): string {
+    if (!isoStr) return '';
+    const parts = isoStr.split('T')[0].split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return isoStr;
   }
 
   // ── UI helpers ──

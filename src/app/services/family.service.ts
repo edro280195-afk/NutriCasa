@@ -18,6 +18,8 @@ export class FamilyService {
   readonly onPostCreated = new Subject<PostResultDto>();
   readonly onReactionToggled = new Subject<{ postId: string; reaction: ReactionResultDto }>();
   readonly onCommentAdded = new Subject<{ postId: string; comment: CommentResultDto }>();
+  readonly onPostDeleted = new Subject<string>();
+  readonly onCommentDeleted = new Subject<{ postId: string; commentId: string }>();
 
   private _connected = new Subject<boolean>();
 
@@ -107,6 +109,8 @@ export class FamilyService {
     this.hubConnection.on('PostCreated', (data: PostResultDto) => this.onPostCreated.next(data));
     this.hubConnection.on('ReactionToggled', (data: { postId: string; reaction: ReactionResultDto }) => this.onReactionToggled.next(data));
     this.hubConnection.on('CommentAdded', (data: { postId: string; comment: CommentResultDto }) => this.onCommentAdded.next(data));
+    this.hubConnection.on('PostDeleted', (postId: string) => this.onPostDeleted.next(postId));
+    this.hubConnection.on('CommentDeleted', (data: { postId: string; commentId: string }) => this.onCommentDeleted.next(data));
 
     await this.hubConnection.start();
     this._connected.next(true);
