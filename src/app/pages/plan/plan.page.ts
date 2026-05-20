@@ -218,20 +218,23 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
   @if (selectedMeal(); as meal) {
     <div class="drawer-overlay" (click)="closeDrawer()"></div>
     <div class="meal-drawer">
-      <div class="drawer-header">
-        <h3 class="drawer-title">{{ getMealLabel(meal.mealType) }}</h3>
-        <div class="drawer-header-actions">
+      <div class="meal-drawer-hero" [class]="'mhero-' + meal.mealType">
+        <div class="meal-drawer-hero-handle"></div>
+        <div class="meal-drawer-hero-actions">
           <button class="fav-btn-lg" [class.faved]="isFavorite(meal.recipe.recipeId)" (click)="toggleFavorite(meal.recipe.recipeId)" title="Favorita">
             <svg width="20" height="20" viewBox="0 0 24 24" [attr.fill]="isFavorite(meal.recipe.recipeId) ? 'var(--coral)' : 'none'" stroke="var(--coral)" stroke-width="2">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
           </button>
           <button class="drawer-close" (click)="closeDrawer()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
+        <div class="dhero-emoji">{{ mealEmoji(meal.mealType) }}</div>
+        <div class="dhero-type">{{ getMealLabel(meal.mealType) }}</div>
+        <h4 class="drawer-recipe">{{ meal.recipe.name }}</h4>
       </div>
-      <h4 class="drawer-recipe">{{ meal.recipe.name }}</h4>
+      <div class="drawer-body">
 
       <div class="drawer-macros">
         <div class="dm-row"><span>Calorías</span><strong>{{ meal.recipe.calories }} kcal</strong></div>
@@ -316,6 +319,7 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
       @if (meal.isLocked) {
         <p class="drawer-hint">Esta comida está bloqueada. Desbloquéala para generar otra receta.</p>
       }
+      </div>
     </div>
   }
   `,
@@ -416,12 +420,25 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
     .empty-state h3 { font-family: var(--display); font-size: 22px; font-weight: 400; color: var(--ink); margin: 16px 0 8px; }
     .empty-state p { font-size: 14px; color: var(--ink-light); margin-bottom: 24px; }
 
-    .drawer-overlay { position: fixed; inset: 0; background: rgba(15,36,25,0.4); z-index: 99; animation: fadeIn 0.2s ease; }
-    .meal-drawer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; max-height: 80vh; background: var(--paper); border-radius: 24px 24px 0 0; padding: 20px 24px 32px; z-index: 100; overflow-y: auto; animation: slideUp 0.3s var(--ease-out); }
-    .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .drawer-title { font-family: var(--display); font-size: 14px; font-weight: 400; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.12em; }
-    .drawer-close { background: none; border: none; cursor: pointer; color: var(--ink-muted); padding: 4px; }
-    .drawer-recipe { font-family: var(--display); font-size: 22px; font-weight: 500; color: var(--ink); margin: 0 0 16px; }
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(10,30,20,0.55); z-index: 150; animation: fadeIn 0.2s ease; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    .meal-drawer { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; max-height: 88vh; background: var(--paper); border-radius: 28px 28px 0 0; padding: 0; z-index: 151; overflow-y: auto; animation: sheetUp 0.4s cubic-bezier(0.16,1,0.3,1); box-shadow: 0 -24px 60px rgba(10,30,20,0.22); }
+    @keyframes sheetUp { from { transform: translateX(-50%) translateY(80px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    .drawer-header { padding: 0; }
+    .meal-drawer-hero { padding: 16px 24px 22px; position: relative; overflow: hidden; }
+    .meal-drawer-hero::after { content: ''; position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.3); pointer-events: none; }
+    .mhero-breakfast { background: linear-gradient(145deg, #FFF4EC, #FBDFC6); }
+    .mhero-lunch { background: linear-gradient(145deg, #E6F5EE, #C1EAD6); }
+    .mhero-dinner { background: linear-gradient(145deg, #E8EFF8, #C2D8F0); }
+    .mhero-snack { background: linear-gradient(145deg, #FFF8E5, #FFE9A5); }
+    .meal-drawer-hero-handle { width: 44px; height: 5px; background: rgba(0,0,0,0.12); border-radius: 3px; margin: 10px auto 16px; }
+    .meal-drawer-hero-actions { position: absolute; top: 14px; right: 16px; display: flex; gap: 4px; align-items: center; z-index: 2; }
+    .drawer-close { background: rgba(255,255,255,0.75); backdrop-filter: blur(8px); border: none; cursor: pointer; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--ink); transition: background 0.2s; }
+    .drawer-close:hover { background: rgba(255,255,255,0.95); }
+    .dhero-emoji { font-size: 48px; line-height: 1; display: block; margin-bottom: 10px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1)); position: relative; z-index: 1; }
+    .dhero-type { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; background: rgba(15,61,46,0.1); color: var(--pine); padding: 4px 10px; border-radius: var(--r-pill); margin-bottom: 10px; position: relative; z-index: 1; }
+    .drawer-recipe { font-family: var(--display); font-size: 22px; font-weight: 500; color: var(--ink); margin: 0; position: relative; z-index: 1; line-height: 1.25; }
+    .drawer-body { padding: 0 24px 40px; }
+    .drawer-body { padding: 4px 24px 40px; }
     .drawer-macros { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
     .dm-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
     .dm-row span { color: var(--ink-light); }
@@ -580,6 +597,7 @@ export class PlanPage {
     this.planService.getCurrent().subscribe({
       next: (data) => {
         this.plan.set(data);
+        this.selectedDay.set(this.getDefaultDayIndex(data.days));
         this.loadMealLogs(data);
       },
       error: () => {
@@ -618,6 +636,18 @@ export class PlanPage {
   getMealColor(type: string): number {
     const map: Record<string, number> = { breakfast: 1, lunch: 2, dinner: 3, snack: 2 };
     return map[type] || 1;
+  }
+
+  mealEmoji(type: string): string {
+    const map: Record<string, string> = { breakfast: '🍳', lunch: '🥗', dinner: '🍲', snack: '🥜' };
+    return map[type] || '🍽️';
+  }
+
+  private getDefaultDayIndex(days: import('../../models/plan.models').DayPlanDto[]): number {
+    const jsDay = new Date().getDay(); // 0=Dom, 1=Lun…6=Sáb
+    const planDay = jsDay === 0 ? 7 : jsDay;  // 1=Lun…7=Dom
+    const idx = days.findIndex(d => d.dayNumber === planDay);
+    return idx >= 0 ? idx : 0;
   }
 
   getStatusLabel(status: MealLogStatus): string {

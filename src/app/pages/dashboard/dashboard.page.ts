@@ -268,49 +268,69 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
       <div class="drawer-backdrop" (click)="selectedMeal.set(null)">
         <div class="recipe-drawer" (click)="$event.stopPropagation()">
           <div class="drawer-handle"></div>
-          <button class="drawer-close" (click)="selectedMeal.set(null)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-          <div class="drawer-type-badge">{{ getMealLabel(m.mealType) }}</div>
-          <h2 class="drawer-name">{{ m.recipe.name }}</h2>
 
-          <div class="drawer-chips">
-            <div class="dchip dchip-kcal">{{ m.recipe.calories }} kcal</div>
-            <div class="dchip dchip-fat">{{ m.recipe.fatGr }}g grasa</div>
-            <div class="dchip dchip-prot">{{ m.recipe.proteinGr }}g prot</div>
-            <div class="dchip dchip-carb">{{ m.recipe.carbsGr }}g carbs</div>
+          <div class="drawer-hero" [class]="'dhero-' + m.mealType">
+            <button class="drawer-close" (click)="selectedMeal.set(null)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="dhero-emoji">{{ mealEmoji(m.mealType) }}</div>
+            <div class="dhero-type">{{ getMealLabel(m.mealType) }}</div>
+            <h2 class="dhero-title">{{ m.recipe.name }}</h2>
           </div>
 
-          <div class="drawer-meta">
+          <div class="drawer-macro-bar">
+            <div class="dmb-item">
+              <span class="dmb-val">{{ m.recipe.calories }}</span>
+              <span class="dmb-label">kcal 🔥</span>
+            </div>
+            <div class="dmb-sep"></div>
+            <div class="dmb-item">
+              <span class="dmb-val">{{ m.recipe.fatGr }}g</span>
+              <span class="dmb-label">grasa</span>
+            </div>
+            <div class="dmb-sep"></div>
+            <div class="dmb-item">
+              <span class="dmb-val">{{ m.recipe.proteinGr }}g</span>
+              <span class="dmb-label">prot</span>
+            </div>
+            <div class="dmb-sep"></div>
+            <div class="dmb-item">
+              <span class="dmb-val">{{ m.recipe.carbsGr }}g</span>
+              <span class="dmb-label">carbs</span>
+            </div>
+          </div>
+
+          <div class="drawer-time-row">
             @if (m.recipe.prepTimeMin) {
-              <span class="drawer-meta-item">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span class="dtr-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 {{ m.recipe.prepTimeMin }}min prep
               </span>
             }
             @if (m.recipe.cookTimeMin) {
-              <span class="drawer-meta-item">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 006 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/></svg>
+              <span class="dtr-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 006 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/></svg>
                 {{ m.recipe.cookTimeMin }}min cocción
               </span>
             }
             @if (m.recipe.estimatedCostMxn) {
-              <span class="drawer-meta-item">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+              <span class="dtr-item dtr-cost">
                 ~\${{ m.recipe.estimatedCostMxn }} MXN
               </span>
             }
           </div>
 
           @if (m.recipe.ingredients && m.recipe.ingredients.length > 0) {
-            <div class="drawer-section">
-              <div class="drawer-section-title">Ingredientes</div>
-              <div class="drawer-ingredients">
-                @for (ing of m.recipe.ingredients; track ing.name) {
-                  <div class="drawer-ing">
-                    <span class="ing-dot"></span>
-                    <span class="ing-name">{{ ing.name }}</span>
-                    <span class="ing-qty">{{ ing.amount }} {{ ing.unit }}</span>
+            <div class="drawer-block">
+              <div class="drawer-block-head">🥄 Ingredientes</div>
+              <div class="drawer-ings">
+                @for (ing of m.recipe.ingredients; track ing.name; let i = $index) {
+                  <div class="ding" [class.ding-alt]="i % 2 === 1">
+                    <span class="ding-num">{{ i + 1 }}</span>
+                    <span class="ding-name">{{ ing.name }}</span>
+                    @if (ing.amount > 0) {
+                      <span class="ding-qty">{{ ing.amount }} {{ ing.unit }}</span>
+                    }
                   </div>
                 }
               </div>
@@ -318,9 +338,16 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
           }
 
           @if (m.recipe.instructions) {
-            <div class="drawer-section">
-              <div class="drawer-section-title">Preparación</div>
-              <p class="drawer-instructions">{{ m.recipe.instructions }}</p>
+            <div class="drawer-block drawer-block-last">
+              <div class="drawer-block-head">📋 Preparación</div>
+              <div class="drawer-steps">
+                @for (step of instructionSteps(m.recipe.instructions); track $index; let i = $index) {
+                  <div class="dstep">
+                    <div class="dstep-num">{{ i + 1 }}</div>
+                    <p class="dstep-text">{{ step }}</p>
+                  </div>
+                }
+              </div>
             </div>
           }
         </div>
@@ -498,29 +525,48 @@ import type { PlanGenerationResult, MealPlanDto } from '../../models/plan.models
     .macros-arrow:hover { background: rgba(91,192,150,0.22); }
 
     /* ── Recipe Drawer ── */
-    .drawer-backdrop { position: fixed; inset: 0; background: rgba(15,29,20,0.55); z-index: 150; display: flex; align-items: flex-end; justify-content: center; backdrop-filter: blur(2px); animation: fadeIn 0.2s ease; }
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(10,30,20,0.65); z-index: 150; display: flex; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: fadeIn 0.25s ease; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .recipe-drawer { background: var(--paper); width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 12px 24px 36px; max-height: 82vh; overflow-y: auto; position: relative; animation: slideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
-    .drawer-handle { width: 40px; height: 4px; background: var(--line); border-radius: 4px; margin: 0 auto 20px; }
-    .drawer-close { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; background: var(--cream-warm); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-muted); }
-    .drawer-type-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; background: var(--mint-soft); color: var(--pine); padding: 4px 10px; border-radius: var(--r-pill); margin-bottom: 10px; }
-    .drawer-name { font-family: var(--display); font-size: 24px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; line-height: 1.2; margin-bottom: 16px; }
-    .drawer-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-    .dchip { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: var(--r-pill); }
-    .dchip-kcal { background: var(--mint-soft); color: var(--pine); }
-    .dchip-fat { background: rgba(232,134,107,0.12); color: #b05030; }
-    .dchip-prot { background: rgba(91,163,208,0.12); color: #2a6a96; }
-    .dchip-carb { background: rgba(255,193,7,0.12); color: #8a6200; }
-    .drawer-meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
-    .drawer-meta-item { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
-    .drawer-section { margin-bottom: 20px; }
-    .drawer-section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 12px; }
-    .drawer-ingredients { display: flex; flex-direction: column; gap: 6px; }
-    .drawer-ing { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--cream); border-radius: var(--r-md); font-size: 13px; }
-    .ing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); flex-shrink: 0; }
-    .ing-name { flex: 1; color: var(--ink); font-weight: 500; }
-    .ing-qty { color: var(--ink-muted); font-size: 12px; white-space: nowrap; }
-    .drawer-instructions { font-size: 14px; color: var(--ink-soft); line-height: 1.7; white-space: pre-wrap; }
+    .recipe-drawer { background: var(--paper); width: 100%; max-width: 480px; border-radius: 28px 28px 0 0; padding: 0; max-height: 88vh; overflow-y: auto; position: relative; animation: sheetUp 0.4s cubic-bezier(0.16,1,0.3,1); box-shadow: 0 -24px 60px rgba(10,30,20,0.22); }
+    @keyframes sheetUp { from { transform: translateY(80px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .drawer-handle { width: 44px; height: 5px; background: rgba(0,0,0,0.12); border-radius: 3px; margin: 10px auto 0; }
+
+    .drawer-hero { padding: 16px 24px 24px; position: relative; overflow: hidden; }
+    .drawer-hero::after { content: ''; position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.35); pointer-events: none; }
+    .dhero-breakfast { background: linear-gradient(145deg, #FFF4EC, #FBDFC6); }
+    .dhero-lunch { background: linear-gradient(145deg, #E6F5EE, #C1EAD6); }
+    .dhero-dinner { background: linear-gradient(145deg, #E8EFF8, #C2D8F0); }
+    .dhero-snack { background: linear-gradient(145deg, #FFF8E5, #FFE9A5); }
+
+    .drawer-close { position: absolute; top: 14px; right: 16px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.75); backdrop-filter: blur(8px); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink); transition: background 0.2s; z-index: 1; }
+    .drawer-close:hover { background: rgba(255,255,255,0.95); }
+    .dhero-emoji { font-size: 52px; line-height: 1; display: block; margin-bottom: 12px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); position: relative; z-index: 1; }
+    .dhero-type { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; background: rgba(15,61,46,0.1); color: var(--pine); padding: 4px 10px; border-radius: var(--r-pill); margin-bottom: 10px; position: relative; z-index: 1; }
+    .dhero-title { font-family: var(--display); font-size: 24px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; line-height: 1.25; margin: 0; position: relative; z-index: 1; }
+
+    .drawer-macro-bar { display: flex; align-items: center; padding: 14px 24px; background: var(--paper); border-bottom: 1px solid var(--line); }
+    .dmb-item { flex: 1; text-align: center; }
+    .dmb-val { display: block; font-family: var(--display); font-size: 20px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; line-height: 1; }
+    .dmb-label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-muted); margin-top: 4px; }
+    .dmb-sep { width: 1px; height: 34px; background: var(--line); flex-shrink: 0; }
+
+    .drawer-time-row { display: flex; gap: 14px; flex-wrap: wrap; padding: 11px 24px; border-bottom: 1px solid var(--line); background: var(--cream); }
+    .dtr-item { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+    .dtr-cost { color: var(--pine); font-weight: 700; }
+
+    .drawer-block { padding: 20px 24px; border-bottom: 1px solid var(--line); }
+    .drawer-block-last { border-bottom: none; padding-bottom: 44px; }
+    .drawer-block-head { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+    .drawer-ings { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+    .ding { display: flex; align-items: center; gap: 12px; padding: 10px 14px; font-size: 13px; background: var(--paper); }
+    .ding.ding-alt { background: var(--cream); }
+    .ding-num { width: 22px; height: 22px; border-radius: 50%; background: var(--mint-soft); color: var(--pine); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ding-name { flex: 1; color: var(--ink); font-weight: 500; }
+    .ding-qty { color: var(--ink-muted); font-size: 12px; white-space: nowrap; font-weight: 600; }
+    .drawer-steps { display: flex; flex-direction: column; gap: 14px; }
+    .dstep { display: flex; gap: 14px; align-items: flex-start; }
+    .dstep-num { width: 28px; height: 28px; border-radius: 50%; background: var(--pine); color: var(--cream); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .dstep-text { flex: 1; font-size: 14px; color: var(--ink-soft); line-height: 1.65; margin: 0; }
 
     /* ── Check-in Celebration ── */
     .celebration-overlay { position: fixed; inset: 0; background: rgba(10,42,32,0.88); z-index: 200; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); animation: fadeIn 0.3s ease; cursor: pointer; }
@@ -668,6 +714,17 @@ export class DashboardPage implements OnInit {
   getMealColor(type: string): number {
     const map: Record<string, number> = { breakfast: 1, lunch: 2, dinner: 3, snack: 2 };
     return map[type] || 1;
+  }
+
+  instructionSteps(text: string): string[] {
+    // Intenta partir por "N. " al inicio de cada paso
+    const parts = text.split(/(?=\d+\.\s)/g).filter(s => s.trim().length > 0);
+    if (parts.length > 1) {
+      return parts.map(s => s.replace(/^\d+\.\s*/, '').trim()).filter(Boolean);
+    }
+    // Fallback: partir por saltos de línea
+    const lines = text.split(/\n/).map(s => s.trim()).filter(Boolean);
+    return lines.length > 1 ? lines : [text];
   }
 
   mealEmoji(type: string): string {
