@@ -34,6 +34,12 @@ export interface MealPlanDto {
   recipe: RecipeDto;
 }
 
+export interface RecipeIngredientDto {
+  name: string;
+  amount: number;
+  unit: string;
+}
+
 export interface RecipeDto {
   recipeId: string;
   name: string;
@@ -46,6 +52,7 @@ export interface RecipeDto {
   instructions: string;
   estimatedCostMxn: number;
   primaryStore?: string;
+  ingredients: RecipeIngredientDto[];
 }
 
 export interface DayTotalsDto {

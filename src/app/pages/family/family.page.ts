@@ -218,17 +218,21 @@ import { gsap } from 'gsap';
           } @else {
             <div class="sl-empty">
               <p>Aún no hay lista de compras para esta semana.</p>
-              <button class="btn-primary" (click)="generateShoppingList()" [disabled]="generatingList()">
-                {{ generatingList() ? 'Generando...' : 'Generar lista' }}
-              </button>
+              @if (currentMemberRole() === 'owner' || currentMemberRole() === 'admin') {
+                <button class="btn-primary" (click)="generateShoppingList()" [disabled]="generatingList()">
+                  {{ generatingList() ? 'Generando...' : 'Generar lista' }}
+                </button>
+              }
             </div>
           }
         } @else {
           <div class="sl-empty">
             <p>Aún no hay lista de compras para esta semana.</p>
-            <button class="btn-primary" (click)="generateShoppingList()" [disabled]="generatingList()">
-              {{ generatingList() ? 'Generando...' : 'Generar lista' }}
-            </button>
+            @if (currentMemberRole() === 'owner' || currentMemberRole() === 'admin') {
+              <button class="btn-primary" (click)="generateShoppingList()" [disabled]="generatingList()">
+                {{ generatingList() ? 'Generando...' : 'Generar lista' }}
+              </button>
+            }
           </div>
         }
       </div>
@@ -404,7 +408,7 @@ import { gsap } from 'gsap';
     .invite-card { background: var(--paper); border: 1px solid var(--mint); border-radius: var(--r-lg); padding: 14px; margin-bottom: 16px; }
     .invite-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-muted); margin-bottom: 8px; }
     .invite-row { display: flex; gap: 8px; align-items: center; }
-    .invite-code { flex: 1; font-size: 16px; font-weight: 700; color: var(--pine); letter-spacing: 0.08em; background: var(--bg); padding: 8px 12px; border-radius: var(--r-md); }
+    .invite-code { flex: 1; font-size: 16px; font-weight: 700; color: var(--pine); letter-spacing: 0.08em; background: var(--cream); padding: 8px 12px; border-radius: var(--r-md); }
     .invite-warn { font-size: 11px; color: var(--coral); margin-top: 8px; }
     .btn-link { background: none; border: none; color: var(--mint); font-size: 13px; cursor: pointer; padding: 8px 0; display: block; margin-bottom: 12px; text-decoration: underline; }
     .btn-sm { background: var(--pine); color: var(--cream); border: none; padding: 6px 14px; border-radius: var(--r-pill); font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
@@ -430,7 +434,7 @@ import { gsap } from 'gsap';
     .member-actions { display: flex; gap: 6px; align-items: center; }
     .member-role-select { font-size: 11px; padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); color: var(--ink); cursor: pointer; }
     .btn-remove { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .btn-remove:hover { background: var(--bg); color: var(--coral); }
+    .btn-remove:hover { background: var(--cream); color: var(--coral); }
 
     .sl-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; margin-bottom: 16px; }
     .sl-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
@@ -485,12 +489,12 @@ import { gsap } from 'gsap';
     .feed-author { font-size: 14px; font-weight: 600; color: var(--ink); }
     .feed-time { font-size: 11px; color: var(--ink-muted); margin-top: 1px; }
     .feed-delete { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-    .feed-delete:hover { background: var(--bg); color: var(--coral); }
+    .feed-delete:hover { background: var(--cream); color: var(--coral); }
     .feed-content { font-size: 14.5px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 16px; white-space: pre-wrap; padding-left: 2px; }
 
     .feed-reactions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); margin-bottom: 16px; position: relative; }
     .reaction-bubbles { display: flex; gap: 6px; flex-wrap: wrap; }
-    .reaction-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); font-size: 12px; font-weight: 500; color: var(--ink-soft); cursor: pointer; transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .reaction-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--cream); font-size: 12px; font-weight: 500; color: var(--ink-soft); cursor: pointer; transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .reaction-chip:hover { transform: scale(1.08); }
     .reaction-chip.active { border-color: transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .reaction-chip-like.active { background: rgba(91, 192, 150, 0.15); color: var(--pine); border: 1px solid rgba(91, 192, 150, 0.3); }
@@ -507,7 +511,7 @@ import { gsap } from 'gsap';
     .reaction-chip:hover .reaction-emoji { animation: emoji-bounce 0.4s ease-out; }
 
     .reaction-container { position: relative; display: inline-block; }
-    .react-trigger-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--bg); color: var(--ink-muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.25s; }
+    .react-trigger-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--cream); color: var(--ink-muted); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.25s; }
     .react-trigger-btn:hover { background: var(--line); color: var(--ink); transform: scale(1.02); }
     .react-trigger-btn svg { color: var(--ink-soft); transition: transform 0.2s; }
     .react-trigger-btn:hover svg { transform: rotate(-8deg) scale(1.1); }
@@ -518,7 +522,7 @@ import { gsap } from 'gsap';
     .reaction-menu-btn:hover { transform: scale(1.4) translateY(-6px); background: rgba(15, 61, 46, 0.05); }
 
     .feed-comments { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
-    .comment-row { background: var(--bg); border-radius: var(--r-md); padding: 10px 14px; font-size: 13px; color: var(--ink); position: relative; display: flex; flex-direction: column; gap: 4px; border-left: 3px solid rgba(91, 192, 150, 0.3); transition: background-color 0.2s, border-left-color 0.2s; }
+    .comment-row { background: var(--cream); border-radius: var(--r-md); padding: 10px 14px; font-size: 13px; color: var(--ink); position: relative; display: flex; flex-direction: column; gap: 4px; border-left: 3px solid rgba(91, 192, 150, 0.3); transition: background-color 0.2s, border-left-color 0.2s; }
     .comment-row:hover { background: var(--line); border-left-color: var(--mint); }
     .comment-header { display: flex; justify-content: space-between; align-items: center; }
     .comment-author { font-weight: 700; color: var(--pine-darker); font-size: 12.5px; }
@@ -546,7 +550,7 @@ import { gsap } from 'gsap';
     .lb-av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--pine-darker); flex-shrink: 0; }
     .lb-info { flex: 1; min-width: 0; }
     .lb-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
-    .lb-bar-track { height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+    .lb-bar-track { height: 4px; background: var(--cream); border-radius: 2px; overflow: hidden; }
     .lb-bar-fill { height: 100%; background: var(--mint); border-radius: 2px; transition: width 0.4s var(--ease-out); }
     .lb-value { font-size: 13px; font-weight: 700; color: var(--pine); white-space: nowrap; flex-shrink: 0; }
     .lb-empty { text-align: center; padding: 24px 0; font-size: 12px; color: var(--ink-muted); line-height: 1.6; }
@@ -647,6 +651,7 @@ export class FamilyPage implements OnInit, OnDestroy {
         this.members.set(m);
         const me = m.find(x => x.userId === this.currentUserId());
         this.currentMemberRole.set(me?.role ?? '');
+        if (me?.role === 'owner' || me?.role === 'admin') this.loadInviteCode();
       },
       error: () => {}
     });
@@ -756,12 +761,12 @@ export class FamilyPage implements OnInit, OnDestroy {
     }
   }
 
-  private prependPost(post: PostResultDto) {
+  private prependPost(post: PostResultDto, authorUserId?: string) {
     const exists = this.feed().some(p => p.postId === post.postId);
     if (exists) return;
 
     this.feed.update(f => [{
-      postId: post.postId, authorUserId: undefined, authorName: post.authorName,
+      postId: post.postId, authorUserId, authorName: post.authorName,
       postType: post.postType, content: post.content, createdAt: post.createdAt,
       reactions: [], comments: [], commentCount: 0,
     }, ...f]);
@@ -880,7 +885,7 @@ export class FamilyPage implements OnInit, OnDestroy {
     this.posting.set(true);
     this.family.createPost(content).subscribe({
       next: (post) => {
-        this.prependPost(post);
+        this.prependPost(post, this.currentUserId() ?? undefined);
         this.newPostContent.set('');
         this.posting.set(false);
         this.toast.success('Publicado en el muro');

@@ -53,22 +53,37 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
     } @else if (plan(); as p) {
       @if (p.estimatedCostMxn) {
         <div class="savings-card">
-          <div class="savings-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <div class="savings-cost-row">
+            <div class="savings-cost-info">
+              <span class="savings-cost-label">Costo estimado semanal</span>
+              <span class="savings-cost-amount">$ {{ p.estimatedCostMxn | number:'1.0-0' }} <small>MXN</small></span>
+            </div>
+            <div class="savings-mode-badge">{{ p.budgetModeName }}</div>
           </div>
-          <div class="savings-text">
-            <strong>Costo estimado de la semana</strong>
-            <span class="savings-amount">{{ '$' + p.estimatedCostMxn }} MXN</span>
-          </div>
+          @if (p.savingsVsGourmetMxn && p.savingsVsGourmetMxn > 0) {
+            <div class="savings-highlight">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Ahorraste <strong>$ {{ p.savingsVsGourmetMxn | number:'1.0-0' }} MXN</strong> vs modo Internacional
+              <span class="savings-pct">{{ p.savingsVsGourmetPercent | number:'1.0-0' }}% menos</span>
+            </div>
+          }
         </div>
       }
 
+      <div cdkDropListGroup class="plan-editor" [class.is-dragging]="dragging()">
+      @if (dragging()) {
+        <div class="drag-hint">Suelta la comida sobre otro día para moverla</div>
+      }
       <div class="day-tabs">
         @for (day of p.days; track day.dayNumber; let i = $index) {
-          <button class="day-tab" [class.active]="selectedDay() === i" (click)="selectDay(i)">
+          <div class="day-tab" cdkDropList [cdkDropListData]="day"
+            (cdkDropListDropped)="onDropToDay($event, p.planId, day)"
+            [class.active]="selectedDay() === i"
+            [class.drop-target]="dragging() && selectedDay() !== i"
+            (click)="selectDay(i)">
             <span class="day-name">{{ getDayName(day.dayNumber) }}</span>
             <span class="day-cal">{{ day.dayTotals.calories }} kcal</span>
-          </button>
+          </div>
         }
       </div>
 
@@ -80,14 +95,14 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
           <div class="dm-item"><span class="dm-label">Calorías</span><span class="dm-value">{{ day.dayTotals.calories }}</span></div>
         </div>
 
-        <div cdkDropListGroup>
           <div class="meals"
             cdkDropList
             [cdkDropListData]="day.meals"
             (cdkDropListDropped)="onMealDropped($event, p.planId, day)"
             [cdkDropListSortingDisabled]="true">
             @for (meal of day.meals; track meal.planMealId; let i = $index) {
-              <div class="meal" cdkDrag [cdkDragData]="meal" [class.meal-locked]="meal.isLocked">
+              <div class="meal" cdkDrag [cdkDragData]="meal" [class.meal-locked]="meal.isLocked"
+                (cdkDragStarted)="dragging.set(true)" (cdkDragEnded)="dragging.set(false)">
                 <div class="meal-drag-handle" cdkDragHandle>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="9" cy="19" r="2"/><circle cx="15" cy="19" r="2"/></svg>
                 </div>
@@ -125,7 +140,6 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
               </div>
             }
           </div>
-        </div>
 
         @if (p.shoppingList?.byStore?.length) {
           @let sl = p.shoppingList!;
@@ -187,6 +201,7 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
           </div>
         }
       }
+      </div>
     } @else {
       <div class="empty-state">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--ink-muted)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -227,10 +242,34 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
         <div class="dm-row"><span>Costo</span><strong>{{ '$' + meal.recipe.estimatedCostMxn }} MXN</strong></div>
       </div>
 
-      <details class="drawer-instructions">
-        <summary>Instrucciones</summary>
-        <p>{{ meal.recipe.instructions }}</p>
-      </details>
+      @if (meal.recipe.ingredients.length) {
+        <div class="drawer-block">
+          <div class="drawer-block-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+            Ingredientes
+          </div>
+          <ul class="ingredient-list">
+            @for (ing of meal.recipe.ingredients; track ing.name) {
+              <li class="ingredient-item">
+                <span class="ing-name">{{ ing.name }}</span>
+                @if (ing.amount > 0) {
+                  <span class="ing-amount">{{ ing.amount }} {{ ing.unit }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (meal.recipe.instructions.trim()) {
+        <div class="drawer-block">
+          <div class="drawer-block-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Preparación
+          </div>
+          <p class="drawer-instructions-text">{{ meal.recipe.instructions }}</p>
+        </div>
+      }
 
       <div class="drawer-section">
         <label class="drawer-label">Porción</label>
@@ -257,20 +296,26 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
       </div>
 
       <div class="drawer-actions">
-        <button class="btn-secondary" (click)="swapMeal(plan()!.planId, meal)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-          Cambiar esta comida
-        </button>
-        <button class="btn-secondary" (click)="toggleLock(plan()!.planId, meal)">
-          @if (meal.isLocked) {
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Desbloquear
+        <button class="btn-swap" (click)="swapMeal(plan()!.planId, meal)" [disabled]="swapping() || meal.isLocked">
+          @if (swapping()) {
+            <span class="spinner"></span>
+            Generando...
           } @else {
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Bloquear
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            Generar otra receta
+          }
+        </button>
+        <button class="btn-secondary btn-lock-action" (click)="toggleLock(plan()!.planId, meal)" [title]="meal.isLocked ? 'Desbloquear' : 'Bloquear'">
+          @if (meal.isLocked) {
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          } @else {
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           }
         </button>
       </div>
+      @if (meal.isLocked) {
+        <p class="drawer-hint">Esta comida está bloqueada. Desbloquéala para generar otra receta.</p>
+      }
     </div>
   }
   `,
@@ -290,14 +335,23 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
     .greeting-mode { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 5px 11px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-pill); font-size: 11px; font-weight: 600; color: var(--ink-soft); }
     .loading-state { text-align: center; padding: 60px 20px; }
     .loading-state p { font-size: 15px; color: var(--ink-soft); margin-top: 20px; }
-    .savings-card { display: flex; gap: 14px; align-items: center; background: linear-gradient(135deg, var(--mint-soft), var(--cream-warm)); border: 1px solid var(--mint-light); border-radius: var(--r-lg); padding: 16px; margin-bottom: 20px; }
-    .savings-icon { width: 44px; height: 44px; border-radius: 14px; background: var(--pine); color: var(--cream); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .savings-text { font-size: 13px; color: var(--ink-soft); }
-    .savings-text strong { display: block; font-size: 14px; color: var(--ink); }
-    .savings-amount { font-family: var(--display); font-size: 24px; font-weight: 500; color: var(--pine); display: block; margin: 2px 0; }
+    .savings-card { background: linear-gradient(135deg, var(--pine), var(--pine-soft)); border-radius: var(--r-lg); padding: 18px; margin-bottom: 20px; }
+    .savings-cost-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .savings-cost-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(248,244,236,0.65); margin-bottom: 4px; }
+    .savings-cost-amount { font-family: var(--display); font-size: 30px; font-weight: 500; color: var(--cream); line-height: 1; }
+    .savings-cost-amount small { font-size: 14px; opacity: 0.75; }
+    .savings-mode-badge { padding: 5px 12px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--r-pill); font-size: 11px; font-weight: 600; color: var(--cream); white-space: nowrap; flex-shrink: 0; margin-top: 4px; }
+    .savings-highlight { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.18); font-size: 13px; color: rgba(248,244,236,0.85); }
+    .savings-highlight svg { color: var(--mint); flex-shrink: 0; }
+    .savings-highlight strong { font-weight: 700; color: var(--mint-light); }
+    .savings-pct { margin-left: 4px; padding: 2px 8px; background: rgba(91,192,150,0.3); border-radius: var(--r-pill); font-size: 11px; font-weight: 700; color: var(--mint-light); }
+    .plan-editor { position: relative; }
+    .drag-hint { position: sticky; top: 8px; z-index: 30; margin: 0 auto 12px; max-width: max-content; padding: 8px 16px; background: var(--pine); color: var(--cream); border-radius: var(--r-pill); font-size: 12px; font-weight: 600; box-shadow: var(--shadow-sm); animation: fadeIn 0.2s ease; }
     .day-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; }
-    .day-tab { flex-shrink: 0; padding: 10px 14px; border: 1.5px solid var(--line); border-radius: var(--r-pill); background: var(--paper); text-align: center; cursor: pointer; transition: all 0.2s; }
+    .day-tab { flex-shrink: 0; padding: 10px 14px; border: 1.5px solid var(--line); border-radius: var(--r-pill); background: var(--paper); text-align: center; cursor: pointer; transition: all 0.2s; user-select: none; }
     .day-tab.active { border-color: var(--pine); background: var(--pine); color: var(--cream); }
+    .day-tab.drop-target { border-color: var(--mint); border-style: dashed; background: var(--mint-soft); }
+    .day-tab.cdk-drop-list-receiving, .day-tab.cdk-drop-list-dragging { border-color: var(--mint); background: var(--mint-light); transform: scale(1.05); }
     .day-name { display: block; font-size: 12px; font-weight: 600; }
     .day-cal { display: block; font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
     .day-tab.active .day-cal { color: rgba(248,244,236,0.6); }
@@ -372,9 +426,16 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
     .dm-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
     .dm-row span { color: var(--ink-light); }
     .dm-row strong { color: var(--ink); }
-    .drawer-instructions { margin-bottom: 16px; }
-    .drawer-instructions summary { font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; padding: 8px 0; }
-    .drawer-instructions p { font-size: 13px; color: var(--ink-light); line-height: 1.6; white-space: pre-line; }
+    .drawer-block { margin-bottom: 18px; }
+    .drawer-block-title { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .drawer-block-title svg { color: var(--mint); flex-shrink: 0; }
+    .ingredient-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+    .ingredient-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; font-size: 13px; }
+    .ingredient-item:not(:last-child) { border-bottom: 1px solid var(--line); }
+    .ingredient-item:nth-child(even) { background: var(--cream); }
+    .ing-name { color: var(--ink); font-weight: 500; }
+    .ing-amount { color: var(--ink-light); font-weight: 600; white-space: nowrap; font-size: 12px; }
+    .drawer-instructions-text { font-size: 13px; color: var(--ink-light); line-height: 1.65; white-space: pre-line; margin: 0; }
     .drawer-section { margin-bottom: 16px; }
     .drawer-label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
     .portion-row { display: flex; align-items: center; gap: 12px; }
@@ -385,9 +446,16 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
     .log-btn { flex: 1; padding: 10px 8px; border: 1.5px solid var(--line); border-radius: var(--r-pill); background: var(--paper); font-size: 12px; font-weight: 600; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; text-align: center; }
     .log-btn.active { border-color: var(--pine); background: var(--pine); color: var(--cream); }
     .log-btn:hover:not(.active) { border-color: var(--mint); }
-    .drawer-actions { display: flex; gap: 10px; margin-top: 8px; }
+    .drawer-actions { display: flex; gap: 10px; margin-top: 12px; }
     .btn-secondary { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border: 1.5px solid var(--line); border-radius: var(--r-pill); background: var(--paper); font-size: 13px; font-weight: 600; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
     .btn-secondary:hover { border-color: var(--mint); color: var(--pine); }
+    .btn-swap { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border: none; border-radius: var(--r-pill); background: var(--pine); color: var(--cream); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+    .btn-swap:hover:not(:disabled) { background: var(--mint); }
+    .btn-swap:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-lock-action { flex: 0 0 52px; }
+    .drawer-hint { font-size: 12px; color: var(--ink-muted); text-align: center; margin: 10px 0 0; }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(248,244,236,0.4); border-top-color: var(--cream); border-radius: 50%; animation: nc-spin 0.7s linear infinite; }
+    @keyframes nc-spin { to { transform: rotate(360deg); } }
     .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; border: none; border-radius: var(--r-pill); background: var(--pine); color: var(--cream); font-size: 15px; font-weight: 700; cursor: pointer; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -437,6 +505,8 @@ export class PlanPage {
   readonly portionValue = signal(1);
   readonly mealLogStatuses = signal<Record<string, MealLogStatus>>({});
   readonly logging = signal(false);
+  readonly swapping = signal(false);
+  readonly dragging = signal(false);
   readonly favoriteIds = signal<Set<string>>(new Set());
   readonly favorites = signal<FavoriteRecipeDto[]>([]);
   readonly showFavorites = signal(false);
@@ -675,6 +745,40 @@ export class PlanPage {
     });
   }
 
+  onDropToDay(event: CdkDragDrop<DayPlanDto>, planId: string, targetDay: DayPlanDto) {
+    this.dragging.set(false);
+    const meal = event.item.data as MealPlanDto;
+    if (!meal) return;
+
+    const sourceDay = this.selectedDayPlan();
+    // Si se soltó sobre el mismo día, no hay movimiento entre días.
+    if (!sourceDay || sourceDay.dayNumber === targetDay.dayNumber) return;
+
+    if (meal.isLocked) {
+      this.toast.warning('Esta comida está bloqueada. Desbloquéala antes de moverla.');
+      return;
+    }
+
+    const move = {
+      planMealId: meal.planMealId,
+      newDayOfWeek: targetDay.dayNumber,
+      newMealType: meal.mealType,
+      rowVersion: meal.rowVersion ?? 1,
+      newSortOrder: targetDay.meals.length + 1,
+    };
+
+    this.planService.reorderMeals(planId, { moves: [move] }).subscribe({
+      next: () => {
+        this.toast.success(`Movido a ${this.getDayName(targetDay.dayNumber)}`);
+        this.loadPlan();
+      },
+      error: () => {
+        this.toast.error('No se pudo mover la comida. Recargando...');
+        this.loadPlan();
+      },
+    });
+  }
+
   toggleLock(planId: string, meal: MealPlanDto) {
     const newLocked = !meal.isLocked;
     meal.isLocked = newLocked;
@@ -696,14 +800,37 @@ export class PlanPage {
       this.toast.warning('Desbloquea la comida antes de cambiarla.');
       return;
     }
-    this.toast.info('Generando nueva receta...');
-    this.planService.swapMeal(planId, meal.planMealId).subscribe({
+    if (this.swapping()) return;
+    this.swapping.set(true);
+    const mealId = meal.planMealId;
+    this.planService.swapMeal(planId, mealId).subscribe({
       next: () => {
-        this.toast.success('Comida sustituida con éxito');
-        this.closeDrawer();
-        this.loadPlan();
+        this.planService.getCurrent().subscribe({
+          next: (data) => {
+            this.plan.set(data);
+            this.loadMealLogs(data);
+            this.reselectMeal(mealId);
+            this.swapping.set(false);
+            this.toast.success('Receta actualizada');
+          },
+          error: () => { this.swapping.set(false); this.loadPlan(); },
+        });
       },
-      error: () => this.toast.error('Error al sustituir la comida'),
+      error: () => {
+        this.swapping.set(false);
+        this.toast.error('No se pudo generar otra receta');
+      },
     });
+  }
+
+  private reselectMeal(planMealId: string) {
+    const updated = this.plan()?.days
+      .flatMap(d => d.meals)
+      .find(m => m.planMealId === planMealId);
+    if (updated) {
+      this.selectedMeal.set(updated);
+    } else {
+      this.closeDrawer();
+    }
   }
 }
