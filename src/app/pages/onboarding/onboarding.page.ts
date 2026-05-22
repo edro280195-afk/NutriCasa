@@ -100,21 +100,9 @@ const OVERRIDE_STEPS = [
       <!-- STEP 1: Basic Data -->
       <div class="wiz-step" [class.active]="step() === 1">
         <div class="step-eyebrow">Paso 2 · Datos básicos</div>
-        <h2 class="step-title">Cuéntanos de <span class="italic">ti</span></h2>
-        <p class="step-subtitle">Estos datos nos ayudan a personalizar tu experiencia.</p>
+        <h2 class="step-title">Solo falta <span class="italic">un dato</span></h2>
+        <p class="step-subtitle">La fecha de nacimiento ya quedó guardada al crear tu cuenta.</p>
         <form [formGroup]="basicForm">
-          <div class="field">
-            <label class="field-label" for="dob">Fecha de nacimiento</label>
-            <div class="field-input-wrap">
-              <input id="dob" type="date" formControlName="dateOfBirth">
-            </div>
-            @if (basicForm.get('dateOfBirth')?.invalid && basicForm.get('dateOfBirth')?.touched) {
-              <p style="font-size:12px;color:var(--ink-muted);margin-top:4px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.5" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                Indica tu fecha de nacimiento
-              </p>
-            }
-          </div>
           <div class="field">
             <label class="field-label">Género</label>
             <div class="gender-grid">
@@ -174,17 +162,17 @@ const OVERRIDE_STEPS = [
         <div class="step-eyebrow">Paso 4 · Tipo de cuerpo</div>
         <h2 class="step-title">¿Cómo es tu <span class="italic">complexión?</span></h2>
         <p class="step-subtitle">Selecciona la silueta que más se parezca a ti.</p>
-        <div class="choice-cards">
+        <div class="body-gallery" role="list">
           @for (bt of currentBodyTypes(); track bt.value) {
-            <button class="choice" [class.selected]="bodyTypeForm.get('bodyType')?.value === bt.value" (click)="bodyTypeForm.patchValue({bodyType: bt.value})">
-              <div class="choice-icon" [style.background]="bt.color">
-                <span style="font-size: 24px;">{{ bt.icon }}</span>
+            <button type="button" class="body-card" role="listitem" [class.selected]="bodyTypeForm.get('bodyType')?.value === bt.value" (click)="bodyTypeForm.patchValue({bodyType: bt.value})">
+              <div class="body-art">
+                <img [src]="bt.image" [alt]="bt.label">
               </div>
-              <div class="choice-text">
-                <div class="choice-title">{{ bt.label }}</div>
-                <div class="choice-desc">{{ bt.desc }}</div>
+              <div class="body-card-copy">
+                <div class="body-card-title">{{ bt.label }}</div>
+                <div class="body-card-desc">{{ bt.desc }}</div>
               </div>
-              <div class="choice-check">
+              <div class="body-check">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
             </button>
@@ -571,6 +559,93 @@ const OVERRIDE_STEPS = [
     .choice-check svg { opacity: 0; }
     .choice.selected .choice-check svg { opacity: 1; }
 
+    .body-gallery {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(210px, 72%);
+      gap: 14px;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: thin;
+      padding: 2px 22px 18px;
+      margin: 0 -22px;
+    }
+    .body-card {
+      position: relative;
+      scroll-snap-align: center;
+      min-height: 324px;
+      border: 1.5px solid var(--line);
+      border-radius: var(--r-lg);
+      background: var(--paper);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.22s var(--ease-out), border-color 0.22s var(--ease-out), box-shadow 0.22s var(--ease-out), background 0.22s var(--ease-out);
+    }
+    .body-card:hover {
+      border-color: var(--mint);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .body-card.selected {
+      border-color: var(--pine);
+      background: var(--mint-soft);
+      box-shadow: 0 0 0 3px rgba(15,61,46,0.08);
+    }
+    .body-art {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      background: var(--cream-warm);
+    }
+    .body-art img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    .body-card-copy {
+      min-height: 62px;
+      padding: 0 2px 2px;
+    }
+    .body-card-title {
+      font-family: var(--display);
+      font-size: 19px;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .body-card-desc {
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--ink-light);
+    }
+    .body-check {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid rgba(15,61,46,0.18);
+      background: rgba(250,248,242,0.86);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s var(--ease-out);
+    }
+    .body-check svg { opacity: 0; }
+    .body-card.selected .body-check {
+      background: var(--pine);
+      border-color: var(--pine);
+    }
+    .body-card.selected .body-check svg { opacity: 1; }
+
     .invite-input-wrap { margin-top: 16px; background: var(--paper); border: 1.5px solid var(--line); border-radius: var(--r-lg); padding: 14px 18px; display: flex; align-items: center; gap: 12px; max-width: 460px; margin-left: auto; margin-right: auto; }
     .invite-input-wrap input { flex: 1; border: none; outline: none; background: none; font-size: 16px; font-weight: 600; letter-spacing: 0.06em; color: var(--pine); text-transform: uppercase; }
     .invite-input-wrap input::placeholder { color: var(--ink-muted); letter-spacing: 0.04em; text-transform: none; font-weight: 500; }
@@ -794,19 +869,19 @@ export class OnboardingPage {
   ];
 
   private readonly maleBodyTypes = [
-    { value: 'slim' as BodyType, label: 'Ectomorfo', desc: 'Complexión delgada, metab. rápido', icon: '🏃', color: 'var(--lake-light)' },
-    { value: 'average' as BodyType, label: 'Mesomorfo', desc: 'Complexión atlética, definición media', icon: '💪', color: 'var(--mint-soft)' },
-    { value: 'plus' as BodyType, label: 'Endomorfo', desc: 'Complexión robusta, tiende a acumular', icon: '🦾', color: 'var(--coral-bg)' },
-    { value: 'athletic' as BodyType, label: 'Atlético', desc: 'Musculoso, cuerpo trabajado', icon: '🏋️', color: 'var(--mint-soft)' },
-    { value: 'heavy' as BodyType, label: 'Robusto', desc: 'Complexión grande y sólida', icon: '🧑', color: 'var(--gold-soft)' },
+    { value: 'slim' as BodyType, label: 'Ectomorfo', desc: 'Complexión delgada, metabolismo rápido', image: '/images/onboarding/body-types/slim.svg' },
+    { value: 'average' as BodyType, label: 'Mesomorfo', desc: 'Estructura equilibrada, definición media', image: '/images/onboarding/body-types/average.svg' },
+    { value: 'plus' as BodyType, label: 'Endomorfo', desc: 'Complexión amplia, tiende a acumular', image: '/images/onboarding/body-types/plus.svg' },
+    { value: 'athletic' as BodyType, label: 'Atlético', desc: 'Musculoso, cuerpo trabajado', image: '/images/onboarding/body-types/athletic.svg' },
+    { value: 'heavy' as BodyType, label: 'Robusto', desc: 'Complexión grande y sólida', image: '/images/onboarding/body-types/heavy.svg' },
   ];
 
   private readonly femaleBodyTypes = [
-    { value: 'slim' as BodyType, label: 'Rectángulo', desc: 'Hombros y caderas alineados', icon: '🧘', color: 'var(--lake-light)' },
-    { value: 'curvy' as BodyType, label: 'Pera', desc: 'Caderas más anchas que hombros', icon: '🍐', color: 'var(--mint-soft)' },
-    { value: 'average' as BodyType, label: 'Reloj de arena', desc: 'Hombros y caderas equilibrados', icon: '⏳', color: 'var(--coral-bg)' },
-    { value: 'plus' as BodyType, label: 'Manzana', desc: 'Más peso en la parte media', icon: '🍎', color: 'var(--gold-soft)' },
-    { value: 'athletic' as BodyType, label: 'Triángulo invertido', desc: 'Hombros más anchos que caderas', icon: '🔻', color: 'var(--mint-soft)' },
+    { value: 'slim' as BodyType, label: 'Rectángulo', desc: 'Hombros y caderas alineados', image: '/images/onboarding/body-types/slim.svg' },
+    { value: 'curvy' as BodyType, label: 'Pera', desc: 'Caderas más anchas que hombros', image: '/images/onboarding/body-types/curvy.svg' },
+    { value: 'average' as BodyType, label: 'Reloj de arena', desc: 'Hombros y caderas equilibrados', image: '/images/onboarding/body-types/average.svg' },
+    { value: 'plus' as BodyType, label: 'Manzana', desc: 'Más peso en la parte media', image: '/images/onboarding/body-types/plus.svg' },
+    { value: 'athletic' as BodyType, label: 'Triángulo invertido', desc: 'Hombros más anchos que caderas', image: '/images/onboarding/body-types/athletic.svg' },
   ];
 
   readonly currentBodyTypes = computed(() => {
@@ -814,7 +889,7 @@ export class OnboardingPage {
     const base = gender === 'female' ? this.femaleBodyTypes : this.maleBodyTypes;
     return [
       ...base,
-      { value: 'notSure' as BodyType, label: 'No estoy seguro', desc: 'Déjalo en automático', icon: '❓', color: 'var(--cream-warm)' },
+      { value: 'notSure' as BodyType, label: 'No estoy seguro', desc: 'Déjalo en automático', image: '/images/onboarding/body-types/not-sure.svg' },
     ];
   });
 
@@ -872,6 +947,11 @@ export class OnboardingPage {
 
   ngOnInit() {
     this.loadFromStorage();
+    this.hydrateBasicDataFromProfile();
+    this.auth.loadProfile().subscribe({
+      next: () => this.hydrateBasicDataFromProfile(),
+      error: () => {}
+    });
     this.syncWithServerStatus();
 
     const subs = [
@@ -908,6 +988,16 @@ export class OnboardingPage {
       this.step.set(serverStep);
       this.saveToStorage();
     }
+  }
+
+  private hydrateBasicDataFromProfile() {
+    const birthDate = this.auth.state().user?.birthDate;
+    if (!birthDate || this.basicForm.value.dateOfBirth) return;
+
+    this.basicForm.patchValue(
+      { dateOfBirth: birthDate.slice(0, 10) },
+      { emitEvent: false }
+    );
   }
 
   private mapSuggestedStep(currentSuggestedStep: number): number {
@@ -1018,6 +1108,7 @@ export class OnboardingPage {
         if (this.groupAction() === 'join' && this.inviteCode().trim().length === 0) return false;
         return true;
       case 1:
+        this.hydrateBasicDataFromProfile();
         this.basicForm.markAllAsTouched();
         return this.basicForm.valid;
       case 2:
@@ -1108,6 +1199,7 @@ export class OnboardingPage {
   }
 
   private submitBasicData() {
+    this.hydrateBasicDataFromProfile();
     if (this.basicForm.invalid) return;
     const raw = this.basicForm.value;
     this.onboarding.completeStep2BasicData({

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="title">
+  <title id="title">Complexion robusta</title>
+  <rect width="240" height="300" rx="28" fill="#eef3ed"/>
+  <circle cx="120" cy="57" r="26" fill="#d9a37c"/>
+  <path d="M73 102c22-17 72-17 94 0 15 37 23 75 22 113l10 43c3 13-7 24-20 24h-12c-8 0-15-6-17-14l-11-55h-38l-11 55c-2 8-9 14-17 14H61c-13 0-23-11-20-24l10-43c-1-38 7-76 22-113z" fill="#6f6b43"/>
+  <path d="M75 108l-34 47c-5 7-4 17 4 22 7 5 17 3 22-4l29-42-21-23zM165 108l34 47c5 7 4 17-4 22-7 5-17 3-22-4l-29-42 21-23z" fill="#6f6b43"/>
+  <path d="M98 96c12 21 32 21 44 0" fill="none" stroke="#f2c8aa" stroke-width="8" stroke-linecap="round"/>
+</svg>

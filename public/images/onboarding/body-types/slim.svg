@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="title">
+  <title id="title">Complexion delgada</title>
+  <rect width="240" height="300" rx="28" fill="#eef7f0"/>
+  <circle cx="120" cy="58" r="24" fill="#f0c6a8"/>
+  <path d="M96 94c10-10 38-10 48 0l8 44c3 15 6 31 12 47l12 78c2 10-5 19-15 19h-2c-8 0-14-6-15-14l-12-74h-24l-12 74c-1 8-7 14-15 14h-2c-10 0-17-9-15-19l12-78c6-16 9-32 12-47l8-44z" fill="#34745a"/>
+  <path d="M88 108l-18 66c-2 8 3 16 11 18 8 1 15-4 17-12l15-58-25-14zM152 108l18 66c2 8-3 16-11 18-8 1-15-4-17-12l-15-58 25-14z" fill="#34745a"/>
+  <path d="M103 95c8 20 26 20 34 0" fill="none" stroke="#f8ddc9" stroke-width="6" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="title">
+  <title id="title">No estoy seguro</title>
+  <rect width="240" height="300" rx="28" fill="#edf3f2"/>
+  <circle cx="120" cy="58" r="24" fill="#e8b895"/>
+  <path d="M88 99c14-13 50-13 64 0l8 42c5 22 14 40 24 58l12 60c2 12-7 23-19 23h-7c-8 0-15-6-16-14l-12-66h-44l-12 66c-1 8-8 14-16 14h-7c-12 0-21-11-19-23l12-60c10-18 19-36 24-58l8-42z" fill="#7a8c86"/>
+  <path d="M88 106l-27 58c-4 8 0 17 8 21 8 3 17 0 21-8l23-52-25-19zM152 106l27 58c4 8 0 17-8 21-8 3-17 0-21-8l-23-52 25-19z" fill="#7a8c86"/>
+  <path d="M101 96c10 18 28 18 38 0" fill="none" stroke="#f6d2b8" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="174" cy="83" r="22" fill="#ffffff" opacity=".9"/>
+  <path d="M170 78c1-7 12-7 13 0 1 8-8 8-8 15" fill="none" stroke="#2f6f61" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="175" cy="101" r="3" fill="#2f6f61"/>
+</svg>

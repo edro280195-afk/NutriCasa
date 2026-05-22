@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="title">
+  <title id="title">Complexion curvy</title>
+  <rect width="240" height="300" rx="28" fill="#fbefe9"/>
+  <circle cx="120" cy="58" r="24" fill="#efc1a1"/>
+  <path d="M91 96c12-11 46-11 58 0 2 29 10 50 28 72 15 18 22 49 20 91-1 13-11 23-24 23h-4c-8 0-15-6-16-14l-14-64h-38l-14 64c-1 8-8 14-16 14h-4c-13 0-23-10-24-23-2-42 5-73 20-91 18-22 26-43 28-72z" fill="#9d5e54"/>
+  <path d="M91 105l-25 57c-4 8 0 18 8 21 8 4 18 0 21-8l21-51-25-19zM149 105l25 57c4 8 0 18-8 21-8 4-18 0-21-8l-21-51 25-19z" fill="#9d5e54"/>
+  <path d="M101 96c9 19 29 19 38 0" fill="none" stroke="#f8d8c2" stroke-width="7" stroke-linecap="round"/>
+</svg>

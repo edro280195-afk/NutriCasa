@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="title">
+  <title id="title">Complexion amplia</title>
+  <rect width="240" height="300" rx="28" fill="#f7efe2"/>
+  <circle cx="120" cy="58" r="25" fill="#eab58d"/>
+  <path d="M82 101c17-15 59-15 76 0 17 34 25 69 26 111l9 47c2 12-7 23-20 23h-9c-8 0-15-6-16-14l-10-56h-36l-10 56c-1 8-8 14-16 14h-9c-13 0-22-11-20-23l9-47c1-42 9-77 26-111z" fill="#b66b4f"/>
+  <path d="M83 108l-30 54c-4 8-1 18 7 22 8 4 18 1 22-7l25-48-24-21zM157 108l30 54c4 8 1 18-7 22-8 4-18 1-22-7l-25-48 24-21z" fill="#b66b4f"/>
+  <path d="M99 96c11 20 31 20 42 0" fill="none" stroke="#f8d5bc" stroke-width="7" stroke-linecap="round"/>
+</svg>
