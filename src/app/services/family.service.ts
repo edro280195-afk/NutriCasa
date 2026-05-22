@@ -1,5 +1,5 @@
 import { Injectable, inject, isDevMode } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, map } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
@@ -56,9 +56,12 @@ export class FamilyService {
     const apiBase = isDevMode() ? 'https://localhost:7120/api' : 'https://nutricasa-api.onrender.com/api';
     const form = new FormData();
     form.append('file', file);
-    return this.http.post<string>(`${apiBase}/family/posts/upload-image`, form, {
+    return this.http.post<{ imageUrl: string }>(`${apiBase}/family/posts/upload-image`, form, {
       headers: { Authorization: `Bearer ${token}` },
-    }).pipe(catchError(err => throwError(() => err)));
+    }).pipe(
+      map(response => response.imageUrl),
+      catchError(err => throwError(() => err))
+    );
   }
 
   toggleReaction(postId: string, reactionType = 'Like'): Observable<ReactionResultDto> {

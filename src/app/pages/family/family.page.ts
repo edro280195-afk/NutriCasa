@@ -1056,10 +1056,10 @@ export class FamilyPage implements OnInit, OnDestroy {
 
   submitPost() {
     const content = this.newPostContent().trim();
-    if (!content || this.posting()) return;
+    if (!content || this.posting() || this.uploadingImage()) return;
+    this.posting.set(true);
 
     const doPost = (imageUrl?: string) => {
-      this.posting.set(true);
       this.family.createPost(content, this.selectedPostType(), imageUrl).subscribe({
         next: (post) => {
           this.prependPost({ ...post, imageUrl }, this.currentUserId() ?? undefined);
@@ -1087,6 +1087,7 @@ export class FamilyPage implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.uploadingImage.set(false);
+          this.posting.set(false);
           this.toast.error(this.errorMessage(err, 'No se pudo subir la imagen'));
         }
       });
