@@ -9,7 +9,7 @@ import type {
   GroupRequest, BasicDataRequest, MetricsRequest, BodyTypeRequest,
   ActivityRequest, BudgetModeRequest, MedicalProfileRequest,
   MedicalOverrideRequest, DisclaimerGoalRequest, BodyType,
-  ActivityLevel, BudgetMode, KetoProfile
+  ActivityLevel, BudgetMode, KetoProfile, OnboardingStatusResponse
 } from '../../models/onboarding.models';
 
 const STEPS = [
@@ -872,6 +872,7 @@ export class OnboardingPage {
 
   ngOnInit() {
     this.loadFromStorage();
+    this.syncWithServerStatus();
 
     const subs = [
       this.basicForm.valueChanges.subscribe(() => this.saveToStorage()),
@@ -883,6 +884,46 @@ export class OnboardingPage {
       this.overrideForm.valueChanges.subscribe(() => this.saveToStorage()),
       this.goalForm.valueChanges.subscribe(() => this.saveToStorage()),
     ];
+  }
+
+  private syncWithServerStatus() {
+    this.onboarding.getStatus().subscribe({
+      next: (status) => this.applyServerStatus(status),
+      error: () => {}
+    });
+  }
+
+  private applyServerStatus(status: OnboardingStatusResponse) {
+    if (status.onboardingComplete) {
+      this.onboardingFinished = true;
+      try { localStorage.removeItem(this.STORAGE_KEY); } catch {}
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
+    this.requiresOverride.set(status.requiresOverride);
+
+    const serverStep = this.mapSuggestedStep(status.currentSuggestedStep);
+    if (serverStep > this.step()) {
+      this.step.set(serverStep);
+      this.saveToStorage();
+    }
+  }
+
+  private mapSuggestedStep(currentSuggestedStep: number): number {
+    switch (currentSuggestedStep) {
+      case 1: return 0;
+      case 2: return 1;
+      case 3: return 2;
+      case 4: return 3;
+      case 5: return 4;
+      case 6: return 5;
+      case 7:
+      case 8:
+        return 6;
+      case 9: return 7;
+      default: return 8;
+    }
   }
 
   ngOnDestroy() {

@@ -1,7 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 import { FamilyService } from '../../services/family.service';
+import { AuthService } from '../../services/auth.service';
 import { NcLoadingComponent, NcPageHeaderComponent } from '../../shared/components';
+import { NcToastService } from '../../shared/components/nc-toast.service';
 import type { FamilyMemberDto, FamilyStatsDto } from '../../models/family.models';
 
 @Component({
@@ -52,6 +55,22 @@ import type { FamilyMemberDto, FamilyStatsDto } from '../../models/family.models
           </div>
         }
       </div>
+
+      <div class="danger-zone">
+        <div>
+          <h2 class="danger-title">Salir del grupo</h2>
+          <p class="danger-copy">
+            @if (currentRole() === 'owner') {
+              Debes transferir la propiedad antes de salir del grupo.
+            } @else {
+              Tus datos personales se conservan. Si vuelves con el mismo codigo, recuperaras tu lugar en el grupo.
+            }
+          </p>
+        </div>
+        <button class="leave-btn" (click)="leaveGroup()" [disabled]="leaving() || currentRole() === 'owner'">
+          {{ leaving() ? 'Saliendo...' : 'Salir' }}
+        </button>
+      </div>
     }
   </div>
   `,
@@ -72,18 +91,57 @@ import type { FamilyMemberDto, FamilyStatsDto } from '../../models/family.models
     .member-name { display: block; font-size: 14px; font-weight: 600; color: var(--ink); }
     .member-role { display: block; font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
     .member-date { font-size: 11px; color: var(--ink-muted); }
+    .danger-zone { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; padding: 16px; background: var(--paper); border: 1px solid color-mix(in srgb, var(--coral) 35%, var(--line)); border-radius: var(--r-lg); }
+    .danger-title { font-size: 14px; font-weight: 700; color: var(--ink); margin: 0 0 4px; }
+    .danger-copy { font-size: 12px; color: var(--ink-muted); margin: 0; line-height: 1.4; }
+    .leave-btn { border: 0; border-radius: var(--r-md); padding: 10px 14px; background: var(--coral); color: white; font-weight: 700; cursor: pointer; }
+    .leave-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   `]
 })
 export class FamilyGroupPage {
   private readonly family = inject(FamilyService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly toast = inject(NcToastService);
 
   readonly loading = signal(true);
+  readonly leaving = signal(false);
   readonly members = signal<FamilyMemberDto[]>([]);
   readonly stats = signal<FamilyStatsDto | null>(null);
+  readonly currentRole = signal('');
 
   constructor() {
-    this.family.getMembers().subscribe(m => { this.members.set(m); this.loading.set(false); });
+    this.family.getMembers().subscribe(m => {
+      this.members.set(m);
+      this.currentRole.set(m.find(member => member.userId === this.currentUserId())?.role ?? '');
+      this.loading.set(false);
+    });
     this.family.getStats().subscribe(s => this.stats.set(s));
+  }
+
+  private currentUserId(): string | null {
+    return this.auth.state().user?.userId ?? null;
+  }
+
+  leaveGroup() {
+    const userId = this.currentUserId();
+    if (!userId || this.leaving() || this.currentRole() === 'owner') return;
+
+    const confirmed = window.confirm('¿Seguro que quieres salir del grupo? Tus datos personales se conservan.');
+    if (!confirmed) return;
+
+    this.leaving.set(true);
+    this.family.removeMember(userId).subscribe({
+      next: () => {
+        this.leaving.set(false);
+        this.toast.success('Saliste del grupo');
+        this.router.navigate(['/onboarding']);
+      },
+      error: (err) => {
+        this.leaving.set(false);
+        this.toast.error(err.error?.message || 'No se pudo salir del grupo');
+      }
+    });
   }
 
   roleLabel(role: string): string {
