@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="title">
-  <title id="title">Complexion atletica</title>
-  <rect width="240" height="300" rx="28" fill="#e7f2f6"/>
-  <circle cx="120" cy="57" r="24" fill="#dca883"/>
-  <path d="M76 103c18-15 70-15 88 0l-4 47c4 19 13 33 23 49l13 63c2 10-6 20-17 20h-10c-8 0-15-6-16-14l-12-68h-42l-12 68c-1 8-8 14-16 14H61c-11 0-19-10-17-20l13-63c10-16 19-30 23-49l-4-47z" fill="#244f48"/>
-  <path d="M80 103l-33 54c-5 8-2 18 6 22 8 5 18 2 22-6l28-48-23-22zM160 103l33 54c5 8 2 18-6 22-8 5-18 2-22-6l-28-48 23-22z" fill="#244f48"/>
-  <path d="M100 96c11 19 29 19 40 0" fill="none" stroke="#f4c8aa" stroke-width="7" stroke-linecap="round"/>
-  <path d="M91 119h58M96 147h48" stroke="#4f9a78" stroke-width="7" stroke-linecap="round" opacity=".45"/>
-</svg>

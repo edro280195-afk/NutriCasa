@@ -607,7 +607,7 @@ const OVERRIDE_STEPS = [
       width: 100%;
       height: 100%;
       display: block;
-      object-fit: cover;
+      object-fit: contain;
     }
     .body-card-copy {
       min-height: 62px;
@@ -869,19 +869,19 @@ export class OnboardingPage {
   ];
 
   private readonly maleBodyTypes = [
-    { value: 'slim' as BodyType, label: 'Ectomorfo', desc: 'Complexión delgada, metabolismo rápido', image: '/images/onboarding/body-types/slim.svg' },
-    { value: 'average' as BodyType, label: 'Mesomorfo', desc: 'Estructura equilibrada, definición media', image: '/images/onboarding/body-types/average.svg' },
-    { value: 'plus' as BodyType, label: 'Endomorfo', desc: 'Complexión amplia, tiende a acumular', image: '/images/onboarding/body-types/plus.svg' },
-    { value: 'athletic' as BodyType, label: 'Atlético', desc: 'Musculoso, cuerpo trabajado', image: '/images/onboarding/body-types/athletic.svg' },
-    { value: 'heavy' as BodyType, label: 'Robusto', desc: 'Complexión grande y sólida', image: '/images/onboarding/body-types/heavy.svg' },
+    { value: 'slim' as BodyType, label: 'Delgado', desc: 'Hombros, cintura y caderas similares', image: '/images/onboarding/body-types/rectangle.png' },
+    { value: 'average' as BodyType, label: 'Equilibrado', desc: 'Hombros y caderas proporcionados', image: '/images/onboarding/body-types/hourglass.png' },
+    { value: 'plus' as BodyType, label: 'Centro amplio', desc: 'Mayor volumen en la zona media', image: '/images/onboarding/body-types/apple.png' },
+    { value: 'athletic' as BodyType, label: 'Atlético', desc: 'Hombros más marcados que caderas', image: '/images/onboarding/body-types/inverted-triangle.png' },
+    { value: 'heavy' as BodyType, label: 'Robusto', desc: 'Estructura grande y sólida', image: '/images/onboarding/body-types/heavy.png' },
   ];
 
   private readonly femaleBodyTypes = [
-    { value: 'slim' as BodyType, label: 'Rectángulo', desc: 'Hombros y caderas alineados', image: '/images/onboarding/body-types/slim.svg' },
-    { value: 'curvy' as BodyType, label: 'Pera', desc: 'Caderas más anchas que hombros', image: '/images/onboarding/body-types/curvy.svg' },
-    { value: 'average' as BodyType, label: 'Reloj de arena', desc: 'Hombros y caderas equilibrados', image: '/images/onboarding/body-types/average.svg' },
-    { value: 'plus' as BodyType, label: 'Manzana', desc: 'Más peso en la parte media', image: '/images/onboarding/body-types/plus.svg' },
-    { value: 'athletic' as BodyType, label: 'Triángulo invertido', desc: 'Hombros más anchos que caderas', image: '/images/onboarding/body-types/athletic.svg' },
+    { value: 'slim' as BodyType, label: 'Rectángulo', desc: 'Hombros y caderas alineados', image: '/images/onboarding/body-types/rectangle.png' },
+    { value: 'curvy' as BodyType, label: 'Pera', desc: 'Caderas más anchas que hombros', image: '/images/onboarding/body-types/pear.png' },
+    { value: 'average' as BodyType, label: 'Reloj de arena', desc: 'Hombros y caderas equilibrados', image: '/images/onboarding/body-types/hourglass.png' },
+    { value: 'plus' as BodyType, label: 'Manzana', desc: 'Más peso en la parte media', image: '/images/onboarding/body-types/apple.png' },
+    { value: 'athletic' as BodyType, label: 'Triángulo invertido', desc: 'Hombros más anchos que caderas', image: '/images/onboarding/body-types/inverted-triangle.png' },
   ];
 
   readonly currentBodyTypes = computed(() => {
@@ -889,7 +889,7 @@ export class OnboardingPage {
     const base = gender === 'female' ? this.femaleBodyTypes : this.maleBodyTypes;
     return [
       ...base,
-      { value: 'notSure' as BodyType, label: 'No estoy seguro', desc: 'Déjalo en automático', image: '/images/onboarding/body-types/not-sure.svg' },
+      { value: 'notSure' as BodyType, label: 'No estoy seguro', desc: 'Déjalo en automático', image: '/images/onboarding/body-types/not-sure.png' },
     ];
   });
 

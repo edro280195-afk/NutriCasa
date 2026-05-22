@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img" aria-labelledby="title">
-  <title id="title">Complexion media</title>
-  <rect width="240" height="300" rx="28" fill="#f4f0e7"/>
-  <circle cx="120" cy="58" r="25" fill="#e9b892"/>
-  <path d="M88 98c13-13 51-13 64 0l10 44c4 19 12 36 21 54l13 65c2 11-6 21-17 21h-8c-8 0-15-6-16-14l-13-70h-44l-13 70c-1 8-8 14-16 14h-8c-11 0-19-10-17-21l13-65c9-18 17-35 21-54l10-44z" fill="#2f6f61"/>
-  <path d="M88 104l-27 63c-3 8 1 17 9 20 8 3 17-1 20-9l23-57-25-17zM152 104l27 63c3 8-1 17-9 20-8 3-17-1-20-9l-23-57 25-17z" fill="#2f6f61"/>
-  <path d="M101 96c10 18 28 18 38 0" fill="none" stroke="#f7d5bd" stroke-width="7" stroke-linecap="round"/>
-</svg>
