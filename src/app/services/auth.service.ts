@@ -45,8 +45,11 @@ export class AuthService {
     );
   }
 
-  register(request: RegisterRequest): Observable<{ message: string }> {
-    return this.api.post<{ message: string }>('/auth/register', request);
+  register(request: RegisterRequest): Observable<UserProfile> {
+    return this.api.post<TokenResponse>('/auth/register', request).pipe(
+      tap(res => this.setSession(res)),
+      switchMap(() => this.loadProfile())
+    );
   }
 
   logout(): Observable<void> {
@@ -90,8 +93,12 @@ export class AuthService {
     return this.api.post<void>('/auth/reset-password', request);
   }
 
-  verifyEmail(request: VerifyEmailRequest): Observable<void> {
-    return this.api.post<void>('/auth/verify-email', request);
+  verifyEmail(request: VerifyEmailRequest): Observable<UserProfile> {
+    const token = encodeURIComponent(request.token);
+    return this.api.post<TokenResponse>(`/auth/verify-email?token=${token}`, {}).pipe(
+      tap(res => this.setSession(res)),
+      switchMap(() => this.loadProfile())
+    );
   }
 
   loadProfile(): Observable<UserProfile> {

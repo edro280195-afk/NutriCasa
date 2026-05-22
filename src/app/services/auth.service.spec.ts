@@ -89,13 +89,16 @@ describe('AuthService', () => {
     });
   }));
 
-  it('register calls api', () => new Promise<void>((done) => {
-    const req: RegisterRequest = { email: 'test@test.com', password: 'pass123', fullName: 'Test' };
-    api.post = vi.fn().mockReturnValueOnce(of({ message: 'Registrado' }));
+  it('register sets session and loads profile', () => new Promise<void>((done) => {
+    const req: RegisterRequest = { email: 'test@test.com', password: 'pass123456', fullName: 'Test User', birthDate: '1990-01-01' };
+    api.post = vi.fn().mockReturnValueOnce(of(mockToken));
+    api.get = vi.fn().mockReturnValueOnce(of(mockProfile));
 
-    service.register(req).subscribe((res) => {
-      expect(res.message).toBe('Registrado');
+    service.register(req).subscribe((profile) => {
+      expect(profile.fullName).toBe('Test User');
+      expect(localStorage.getItem('accessToken')).toBe('test-access');
       expect(api.post).toHaveBeenCalledWith('/auth/register', req);
+      expect(api.get).toHaveBeenCalledWith('/auth/me');
       done();
     });
   }));

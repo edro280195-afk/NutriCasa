@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, type AbstractControl } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -211,7 +211,7 @@ export class RegisterPage {
     confirmPassword: ['', Validators.required],
     birthDate: ['', [
       Validators.required,
-      (control) => {
+      (control: AbstractControl) => {
         if (!control.value) return null;
         const birth = new Date(control.value);
         const cutoff = new Date();

@@ -102,14 +102,13 @@ export class VerifyEmailPage {
 
   constructor() {
     this.route.queryParams.subscribe(params => {
-      const userId = params['userId'] || '';
       const token = params['token'] || '';
-      if (!userId || !token) {
+      if (!token) {
         this.loading.set(false);
         this.error.set('Faltan parámetros de verificación.');
         return;
       }
-      this.auth.verifyEmail({ userId, token }).subscribe({
+      this.auth.verifyEmail({ token }).subscribe({
         next: () => {
           this.verified.set(true);
           this.loading.set(false);

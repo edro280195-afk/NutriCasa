@@ -8,7 +8,7 @@ import { ShoppingListService } from '../../services/shopping-list.service';
 import { TimeAgoPipe } from '../../pipes/time-ago.pipe';
 import { NcToastService } from '../../shared/components/nc-toast.service';
 import type { FamilyMemberDto, FamilyPostDto, FamilyStatsDto, PostResultDto, ReactionResultDto, CommentResultDto, GroupLeaderboardDto, LeaderboardEntryDto, InviteCodeDto, SubgroupCreatedDto } from '../../models/family.models';
-import type { ShoppingListDto } from '../../models/shopping-list.models';
+import type { ShoppingListDto, ShoppingListItemDto } from '../../models/shopping-list.models';
 import { gsap } from 'gsap';
 
 @Component({
@@ -93,7 +93,10 @@ import { gsap } from 'gsap';
 
       <div class="family-section">
         <div class="section-head">
-          <h2 class="section-title">Leaderboard</h2>
+          <div>
+            <h2 class="section-title">Leaderboard</h2>
+            <p class="section-subtitle">Progreso compartido sin perder de vista el esfuerzo individual.</p>
+          </div>
         </div>
 
         <div class="lb-tabs">
@@ -109,7 +112,7 @@ import { gsap } from 'gsap';
             <div class="spinner-sm"></div>
           </div>
         } @else {
-          <div class="lb-list">
+          <div class="lb-list" [class.has-winners]="leaderboard().entries.length > 0">
             @for (e of leaderboard().entries; track e.userId) {
               <div class="lb-row">
                 <div class="lb-rank">
@@ -140,7 +143,10 @@ import { gsap } from 'gsap';
       @if (currentMemberRole() === 'owner' || currentMemberRole() === 'admin') {
         <div class="family-section">
           <div class="section-head">
-            <h2 class="section-title">Miembros</h2>
+            <div>
+              <h2 class="section-title">Miembros</h2>
+              <p class="section-subtitle">Roles, permisos y subgrupos de la familia.</p>
+            </div>
           </div>
           <div class="member-list">
             @for (m of members(); track m.userId) {
@@ -177,7 +183,10 @@ import { gsap } from 'gsap';
 
       <div class="family-section sl-section">
         <div class="section-head">
-          <h2 class="section-title">Lista de compras</h2>
+          <div>
+            <h2 class="section-title">Lista de compras</h2>
+            <p class="section-subtitle">Consolidada por ingrediente para la semana actual.</p>
+          </div>
           <button class="btn-sm" (click)="loadShoppingList()" [disabled]="shoppingListLoading()">
             {{ shoppingListLoading() ? 'Cargando...' : 'Actualizar' }}
           </button>
@@ -185,6 +194,11 @@ import { gsap } from 'gsap';
 
         @if (shoppingListLoading()) {
           <div class="lb-loading"><div class="spinner-sm"></div></div>
+        } @else if (shoppingListError()) {
+          <div class="sl-empty sl-error">
+            <p>{{ shoppingListError() }}</p>
+            <button class="btn-sm" (click)="loadShoppingList()">Reintentar</button>
+          </div>
         } @else if (shoppingList(); as sl) {
           @if (sl.items.length > 0) {
             <div class="sl-card">
@@ -193,22 +207,49 @@ import { gsap } from 'gsap';
                 <div class="print-title">Lista de compras consolidada</div>
                 <div class="print-dates">Semana: {{ formatIsoDate(sl.weekStart) }} al {{ formatIsoDate(sl.weekEnd) }}</div>
               </div>
-              @for (item of sl.items; track item.itemId) {
-                <div class="sl-item" [class.purchased]="item.isPurchased">
-                  <button class="sl-check" (click)="toggleItem(item.itemId)" [class.checked]="item.isPurchased">
-                    @if (item.isPurchased) {
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
-                    }
-                  </button>
-                  <span class="sl-name">{{ item.ingredientName }}</span>
-                  <span class="sl-amount">{{ item.totalAmount }} {{ item.unit }}</span>
-                  @if (item.estimatedCostMxn) {
-                    <span class="sl-cost">{{ '$' }}{{ item.estimatedCostMxn }}</span>
+              <div class="sl-overview">
+                <div>
+                  <strong>{{ purchasedCount(sl) }}</strong>
+                  <span>comprados</span>
+                </div>
+                <div>
+                  <strong>{{ sl.items.length - purchasedCount(sl) }}</strong>
+                  <span>pendientes</span>
+                </div>
+                @if (sl.totalCost) {
+                  <div>
+                    <strong>{{ formatMoney(sl.totalCost) }}</strong>
+                    <span>estimado</span>
+                  </div>
+                }
+              </div>
+              <div class="sl-progress-track">
+                <div class="sl-progress-fill" [style.width.%]="shoppingProgress(sl)"></div>
+              </div>
+              @for (group of groupedShoppingItems(sl.items); track group.category) {
+                <div class="sl-group">
+                  <div class="sl-group-title">
+                    <span>{{ group.category }}</span>
+                    <small>{{ group.purchased }}/{{ group.items.length }}</small>
+                  </div>
+                  @for (item of group.items; track item.itemId) {
+                    <div class="sl-item" [class.purchased]="item.isPurchased">
+                      <button class="sl-check" (click)="toggleItem(item.itemId)" [class.checked]="item.isPurchased" [attr.aria-label]="item.isPurchased ? 'Marcar como pendiente' : 'Marcar como comprado'">
+                        @if (item.isPurchased) {
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+                        }
+                      </button>
+                      <span class="sl-name">{{ item.ingredientName }}</span>
+                      <span class="sl-amount">{{ item.totalAmount }} {{ item.unit }}</span>
+                      @if (item.estimatedCostMxn) {
+                        <span class="sl-cost">{{ formatMoney(item.estimatedCostMxn) }}</span>
+                      }
+                    </div>
                   }
                 </div>
               }
               @if (sl.totalCost) {
-                <div class="sl-total">Total estimado: <strong>{{ '$' }}{{ sl.totalCost }} MXN</strong></div>
+                <div class="sl-total">Total estimado: <strong>{{ formatMoney(sl.totalCost) }} MXN</strong></div>
               }
               <div class="sl-actions">
                 <button class="btn-sm btn-outline" (click)="exportPdf(sl)">Exportar PDF</button>
@@ -239,7 +280,10 @@ import { gsap } from 'gsap';
 
       <div class="family-section">
         <div class="section-head">
-          <h2 class="section-title">Muro familiar</h2>
+          <div>
+            <h2 class="section-title">Muro familiar</h2>
+            <p class="section-subtitle">Logros, comidas y mensajes rápidos del grupo.</p>
+          </div>
         </div>
 
         <div class="composer">
@@ -438,7 +482,7 @@ import { gsap } from 'gsap';
   `,
   styles: [`
     :host { display: contents; }
-    .page { max-width: 480px; margin: 0 auto; padding: 0 20px 120px; background: var(--cream); position: relative; z-index: 1; }
+    .page { max-width: 940px; margin: 0 auto; padding: 0 20px 120px; background: var(--cream); position: relative; z-index: 1; }
     .page-header { padding: 24px 0 20px; display: flex; align-items: center; justify-content: space-between; }
     .page-brand { font-family: var(--display); font-size: 22px; font-weight: 500; color: var(--pine); display: flex; align-items: center; gap: 8px; }
     .page-brand svg { width: 22px; height: 22px; fill: var(--mint); }
@@ -446,8 +490,8 @@ import { gsap } from 'gsap';
     .connection-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-soft); transition: background 0.3s; }
     .connection-dot.online { background: var(--mint); box-shadow: 0 0 6px var(--mint); }
 
-    .family-hero { background: var(--pine); color: var(--cream); border-radius: var(--r-xl); padding: 24px; margin-bottom: 12px; position: relative; overflow: hidden; }
-    .family-hero::before { content: ''; position: absolute; top: -40px; right: -30px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(91,192,150,0.15), transparent 70%); border-radius: 50%; }
+    .family-hero { background: var(--pine); color: var(--cream); border-radius: var(--r-xl); padding: 28px; margin-bottom: 14px; position: relative; overflow: hidden; box-shadow: var(--shadow-pine); }
+    .family-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(91,192,150,0.18), transparent 42%); }
     .family-hero-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; background: rgba(91,192,150,0.2); color: var(--mint-light); padding: 4px 10px; border-radius: var(--r-pill); margin-bottom: 12px; position: relative; }
     .family-hero-title { font-family: var(--display); font-size: 28px; font-weight: 400; letter-spacing: -0.01em; margin-bottom: 6px; position: relative; }
     .family-hero-title .italic { font-style: italic; color: var(--mint-light); }
@@ -473,37 +517,49 @@ import { gsap } from 'gsap';
     .btn-coral { background: var(--coral); color: white; border: none; padding: 8px 20px; border-radius: var(--r-pill); font-size: 13px; font-weight: 600; cursor: pointer; }
     .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); padding: 8px 20px; border-radius: var(--r-pill); font-size: 13px; font-weight: 600; cursor: pointer; }
 
-    .family-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .family-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 26px; }
     .family-stat { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; text-align: center; }
     .family-stat-value { font-family: var(--display); font-size: 28px; font-weight: 500; color: var(--pine); line-height: 1; }
     .family-stat-label { font-size: 11px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.06em; margin-top: 6px; }
 
-    .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+    .family-section { margin-bottom: 26px; }
+    .section-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
     .section-title { font-family: var(--display); font-size: 20px; font-weight: 400; letter-spacing: -0.01em; color: var(--ink); }
+    .section-subtitle { margin-top: 3px; font-size: 12px; color: var(--ink-light); line-height: 1.45; max-width: 56ch; }
 
-    .member-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-    .member-row { display: flex; align-items: center; gap: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 10px 12px; }
-    .member-av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--pine-darker); flex-shrink: 0; }
+    .member-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .member-row { display: flex; align-items: center; gap: 12px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px; min-width: 0; }
+    .member-av { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--pine-darker); flex-shrink: 0; }
     .member-info { flex: 1; }
     .member-name { font-size: 13px; font-weight: 600; color: var(--ink); display: block; }
-    .member-role { font-size: 11px; color: var(--ink-muted); }
+    .member-role { display: inline-flex; width: fit-content; margin-top: 4px; font-size: 10px; color: var(--pine); background: var(--mint-soft); border-radius: var(--r-pill); padding: 2px 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
     .member-actions { display: flex; gap: 6px; align-items: center; }
     .member-role-select { font-size: 11px; padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); color: var(--ink); cursor: pointer; }
     .btn-remove { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .btn-remove:hover { background: var(--cream); color: var(--coral); }
 
-    .sl-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; margin-bottom: 16px; }
-    .sl-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .sl-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-xl); padding: 16px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+    .sl-overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .sl-overview > div { background: var(--cream); border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px; }
+    .sl-overview strong { display: block; font-family: var(--display); font-size: 20px; line-height: 1; color: var(--pine); }
+    .sl-overview span { display: block; margin-top: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); }
+    .sl-progress-track { height: 8px; background: var(--cream); border: 1px solid var(--line); border-radius: var(--r-pill); overflow: hidden; margin-bottom: 14px; }
+    .sl-progress-fill { height: 100%; background: var(--mint); border-radius: var(--r-pill); transition: width 0.35s var(--ease-out); }
+    .sl-group { border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; margin-bottom: 10px; }
+    .sl-group-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--cream); padding: 9px 12px; font-size: 12px; font-weight: 800; color: var(--pine); }
+    .sl-group-title small { font-size: 11px; color: var(--ink-muted); font-weight: 700; }
+    .sl-item { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); font-size: 13px; }
     .sl-item.purchased { opacity: 0.5; }
     .sl-item.purchased .sl-name { text-decoration: line-through; }
     .sl-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--mint); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--cream); transition: all 0.15s; }
     .sl-check.checked { background: var(--mint); }
-    .sl-name { flex: 1; color: var(--ink); }
+    .sl-name { color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
     .sl-amount { font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
     .sl-cost { font-size: 12px; color: var(--pine); font-weight: 600; white-space: nowrap; }
     .sl-total { text-align: right; padding-top: 10px; font-size: 13px; color: var(--ink); }
     .sl-actions { margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end; }
-    .sl-empty { text-align: center; padding: 20px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); margin-bottom: 16px; }
+    .sl-empty { text-align: center; padding: 22px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); margin-bottom: 16px; }
+    .sl-error { border-color: var(--coral-soft); background: var(--coral-bg); }
     .sl-empty p { font-size: 13px; color: var(--ink-muted); margin-bottom: 12px; }
 
     .print-header { display: none; }
@@ -524,7 +580,7 @@ import { gsap } from 'gsap';
       .print-dates { font-size: 13px; color: #666; margin-top: 2px; }
     }
 
-    .composer { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-xl); padding: 18px; margin-bottom: 24px; box-shadow: 0 4px 20px -2px rgba(15, 61, 46, 0.03); position: relative; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
+    .composer { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-xl); padding: 18px; margin-bottom: 18px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
     .composer:focus-within { border-color: var(--mint); box-shadow: 0 6px 24px rgba(91, 192, 150, 0.1); }
     .composer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--mint), var(--lake), var(--gold)); }
     .composer-input { width: 100%; border: none; background: transparent; resize: none; font-family: inherit; font-size: 14px; color: var(--ink); outline: none; line-height: 1.6; }
@@ -536,8 +592,8 @@ import { gsap } from 'gsap';
     .btn-primary:not(:disabled):hover { background: var(--pine-darker); }
 
     .feed { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
-    .feed-card { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-xl); padding: 20px; box-shadow: 0 4px 20px -2px rgba(15, 61, 46, 0.03), 0 2px 6px -1px rgba(15, 61, 46, 0.02); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease; overflow: hidden; }
-    .feed-card::after { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: var(--card-accent, var(--mint)); border-radius: 4px 0 0 4px; }
+    .feed-card { position: relative; background: var(--paper); border: 1px solid color-mix(in srgb, var(--card-accent, var(--mint)) 32%, var(--line)); border-radius: var(--r-xl); padding: 20px; box-shadow: var(--shadow-sm); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease; overflow: hidden; }
+    .feed-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--card-accent, var(--mint)); }
     .feed-card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(15, 61, 46, 0.06), 0 4px 12px rgba(15, 61, 46, 0.03); border-color: rgba(91, 192, 150, 0.2); }
     .feed-header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
     .feed-av { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--cream); flex-shrink: 0; box-shadow: inset 0 -2px 4px rgba(0,0,0,0.15); text-transform: uppercase; }
@@ -572,14 +628,14 @@ import { gsap } from 'gsap';
     .react-trigger-btn svg { color: var(--ink-soft); transition: transform 0.2s; }
     .react-trigger-btn:hover svg { transform: rotate(-8deg) scale(1.1); }
 
-    .reaction-menu { position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, -10px) scale(0.9); background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: var(--r-pill); padding: 6px 12px; display: flex; gap: 8px; box-shadow: 0 10px 30px -5px rgba(15, 61, 46, 0.15), 0 4px 12px -2px rgba(15, 61, 46, 0.05); z-index: 110; pointer-events: none; opacity: 0; transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .reaction-menu { position: absolute; bottom: 100%; left: 50%; transform: translate(-50%, -10px) scale(0.9); background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 6px 12px; display: flex; gap: 8px; box-shadow: var(--shadow-md); z-index: 110; pointer-events: none; opacity: 0; transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
     .reaction-menu.show { pointer-events: auto; opacity: 1; transform: translate(-50%, -10px) scale(1); }
     .reaction-menu-btn { width: 38px; height: 38px; border-radius: 50%; border: none; background: transparent; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s; }
     .reaction-menu-btn:hover { transform: scale(1.4) translateY(-6px); background: rgba(15, 61, 46, 0.05); }
 
     .feed-comments { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
-    .comment-row { background: var(--cream); border-radius: var(--r-md); padding: 10px 14px; font-size: 13px; color: var(--ink); position: relative; display: flex; flex-direction: column; gap: 4px; border-left: 3px solid rgba(91, 192, 150, 0.3); transition: background-color 0.2s, border-left-color 0.2s; }
-    .comment-row:hover { background: var(--line); border-left-color: var(--mint); }
+    .comment-row { background: var(--cream); border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px 14px; font-size: 13px; color: var(--ink); position: relative; display: flex; flex-direction: column; gap: 4px; transition: background-color 0.2s, border-color 0.2s; }
+    .comment-row:hover { background: var(--line); border-color: var(--mint-light); }
     .comment-header { display: flex; justify-content: space-between; align-items: center; }
     .comment-author { font-weight: 700; color: var(--pine-darker); font-size: 12.5px; }
     .comment-text { line-height: 1.5; color: var(--ink-soft); }
@@ -599,7 +655,12 @@ import { gsap } from 'gsap';
     .lb-loading { text-align: center; padding: 24px; }
     .spinner-sm { width: 24px; height: 24px; border: 2px solid var(--line); border-top-color: var(--pine); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
     .lb-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
-    .lb-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); }
+    .lb-row { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+    .lb-list.has-winners .lb-row:first-child { background: var(--pine); border-color: var(--pine); color: var(--cream); }
+    .lb-list.has-winners .lb-row:first-child .lb-name,
+    .lb-list.has-winners .lb-row:first-child .lb-value { color: var(--cream); }
+    .lb-list.has-winners .lb-row:first-child .lb-bar-track { background: rgba(248, 244, 236, 0.16); }
+    .lb-list.has-winners .lb-row:first-child .lb-bar-fill { background: var(--mint-light); }
     .lb-rank { width: 28px; text-align: center; flex-shrink: 0; }
     .lb-rank-medal { font-size: 18px; }
     .lb-rank-num { font-size: 12px; font-weight: 700; color: var(--ink-muted); }
@@ -745,6 +806,7 @@ export class FamilyPage implements OnInit, OnDestroy {
   readonly shoppingList = signal<ShoppingListDto | null>(null);
   readonly shoppingListLoading = signal(false);
   readonly generatingList = signal(false);
+  readonly shoppingListError = signal('');
 
   ngOnInit() {
     this.currentUserId.set(this.auth.state().user?.userId ?? null);
@@ -1207,12 +1269,16 @@ export class FamilyPage implements OnInit, OnDestroy {
 
   loadShoppingList() {
     this.shoppingListLoading.set(true);
+    this.shoppingListError.set('');
     this.shoppingListService.getCurrent().subscribe({
       next: (sl) => {
         this.shoppingList.set(sl);
         this.shoppingListLoading.set(false);
       },
-      error: () => this.shoppingListLoading.set(false)
+      error: (err) => {
+        this.shoppingListLoading.set(false);
+        this.shoppingListError.set(err.error?.message || 'No se pudo cargar la lista de compras.');
+      }
     });
   }
 
@@ -1226,7 +1292,7 @@ export class FamilyPage implements OnInit, OnDestroy {
       },
       error: () => {
         this.generatingList.set(false);
-        this.toast.error('Error al generar lista');
+        this.toast.error('No se pudo generar la lista');
       }
     });
   }
@@ -1264,6 +1330,40 @@ export class FamilyPage implements OnInit, OnDestroy {
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
     return isoStr;
+  }
+
+  groupedShoppingItems(items: ShoppingListItemDto[]) {
+    const groups = new Map<string, ShoppingListItemDto[]>();
+
+    for (const item of items) {
+      const category = item.category?.trim() || 'General';
+      groups.set(category, [...(groups.get(category) ?? []), item]);
+    }
+
+    return Array.from(groups.entries())
+      .map(([category, groupItems]) => ({
+        category,
+        items: groupItems.sort((a, b) => a.sortOrder - b.sortOrder),
+        purchased: groupItems.filter(item => item.isPurchased).length,
+      }))
+      .sort((a, b) => a.category.localeCompare(b.category, 'es'));
+  }
+
+  purchasedCount(list: ShoppingListDto): number {
+    return list.items.filter(item => item.isPurchased).length;
+  }
+
+  shoppingProgress(list: ShoppingListDto): number {
+    if (list.items.length === 0) return 0;
+    return (this.purchasedCount(list) / list.items.length) * 100;
+  }
+
+  formatMoney(value: number): string {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      maximumFractionDigits: 0,
+    }).format(value);
   }
 
   // ── UI helpers ──

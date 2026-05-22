@@ -43,7 +43,6 @@ export interface ResetPasswordRequest {
 }
 
 export interface VerifyEmailRequest {
-  userId: string;
   token: string;
 }
 
