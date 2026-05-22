@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { FamilyService } from '../../services/family.service';
 import { AuthService } from '../../services/auth.service';
@@ -14,7 +14,7 @@ import { gsap } from 'gsap';
 @Component({
   selector: 'app-family',
   standalone: true,
-  imports: [FormsModule, TimeAgoPipe, RouterLink],
+  imports: [FormsModule, TimeAgoPipe],
   template: `
   <div class="page">
     <div class="page-header">
@@ -49,11 +49,11 @@ import { gsap } from 'gsap';
             </div>
           }
         </div>
-        <a routerLink="/challenges" class="challenge-cta">
+        <button type="button" class="challenge-cta" (click)="goToChallenges()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           Retos entre miembros
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        </a>
+        </button>
       </div>
 
       @if (inviteCode(); as ic) {
@@ -745,6 +745,7 @@ export class FamilyPage implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly shoppingListService = inject(ShoppingListService);
   private readonly toast = inject(NcToastService);
+  private readonly router = inject(Router);
   private subs: Subscription[] = [];
 
   readonly members = signal<FamilyMemberDto[]>([]);
@@ -1084,9 +1085,9 @@ export class FamilyPage implements OnInit, OnDestroy {
           this.uploadingImage.set(false);
           doPost(url);
         },
-        error: () => {
+        error: (err) => {
           this.uploadingImage.set(false);
-          this.toast.error('Error al subir imagen');
+          this.toast.error(this.errorMessage(err, 'No se pudo subir la imagen'));
         }
       });
     } else {
@@ -1464,5 +1465,18 @@ export class FamilyPage implements OnInit, OnDestroy {
 
   openImageFullscreen(url: string) {
     window.open(url, '_blank');
+  }
+
+  goToChallenges() {
+    this.router.navigate(['/challenges']);
+  }
+
+  private errorMessage(err: unknown, fallback: string): string {
+    if (typeof err === 'object' && err !== null && 'error' in err) {
+      const error = (err as { error?: { message?: string } }).error;
+      return error?.message || fallback;
+    }
+
+    return fallback;
   }
 }
