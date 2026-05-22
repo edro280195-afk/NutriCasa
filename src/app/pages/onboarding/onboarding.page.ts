@@ -107,7 +107,7 @@ const OVERRIDE_STEPS = [
             <label class="field-label">Género</label>
             <div class="gender-grid">
               @for (opt of genderOptions; track opt.value) {
-                <button type="button" class="gender-btn" [class.selected]="basicForm.get('gender')?.value === opt.value" (click)="basicForm.patchValue({gender: opt.value})">
+                <button type="button" class="gender-btn" [class.selected]="basicForm.get('gender')?.value === opt.value" (click)="selectGender(opt.value)">
                   {{ opt.label }}
                 </button>
               }
@@ -178,6 +178,9 @@ const OVERRIDE_STEPS = [
             </button>
           }
         </div>
+        @if (bodyTypeForm.get('bodyType')?.invalid && bodyTypeForm.get('bodyType')?.touched) {
+          <p class="body-error">Selecciona una opción para continuar.</p>
+        }
       </div>
 
       <!-- STEP 4: Activity -->
@@ -645,6 +648,12 @@ const OVERRIDE_STEPS = [
       border-color: var(--pine);
     }
     .body-card.selected .body-check svg { opacity: 1; }
+    .body-error {
+      max-width: 460px;
+      margin: 0 auto;
+      font-size: 12px;
+      color: var(--coral);
+    }
 
     .invite-input-wrap { margin-top: 16px; background: var(--paper); border: 1.5px solid var(--line); border-radius: var(--r-lg); padding: 14px 18px; display: flex; align-items: center; gap: 12px; max-width: 460px; margin-left: auto; margin-right: auto; }
     .invite-input-wrap input { flex: 1; border: none; outline: none; background: none; font-size: 16px; font-weight: 600; letter-spacing: 0.06em; color: var(--pine); text-transform: uppercase; }
@@ -840,7 +849,7 @@ export class OnboardingPage {
     goalWeightKg: [null as number | null],
   });
 
-  readonly bodyTypeForm = this.fb.group({ bodyType: ['slim' as BodyType] });
+  readonly bodyTypeForm = this.fb.group({ bodyType: [null as BodyType | null, Validators.required] });
   readonly activityForm = this.fb.group({ activityLevel: ['Sedentary' as ActivityLevel] });
   readonly budgetForm = this.fb.group({ budgetMode: ['basic'] });
 
@@ -869,11 +878,11 @@ export class OnboardingPage {
   ];
 
   private readonly maleBodyTypes = [
-    { value: 'slim' as BodyType, label: 'Delgado', desc: 'Hombros, cintura y caderas similares', image: '/images/onboarding/body-types/rectangle.png' },
-    { value: 'average' as BodyType, label: 'Equilibrado', desc: 'Hombros y caderas proporcionados', image: '/images/onboarding/body-types/hourglass.png' },
-    { value: 'plus' as BodyType, label: 'Centro amplio', desc: 'Mayor volumen en la zona media', image: '/images/onboarding/body-types/apple.png' },
-    { value: 'athletic' as BodyType, label: 'Atlético', desc: 'Hombros más marcados que caderas', image: '/images/onboarding/body-types/inverted-triangle.png' },
-    { value: 'heavy' as BodyType, label: 'Robusto', desc: 'Estructura grande y sólida', image: '/images/onboarding/body-types/heavy.png' },
+    { value: 'slim' as BodyType, label: 'Delgado', desc: 'Hombros, cintura y caderas similares', image: '/images/onboarding/body-types/male-rectangle.png' },
+    { value: 'average' as BodyType, label: 'Equilibrado', desc: 'Hombros y caderas proporcionados', image: '/images/onboarding/body-types/male-average.png' },
+    { value: 'plus' as BodyType, label: 'Centro amplio', desc: 'Mayor volumen en la zona media', image: '/images/onboarding/body-types/male-apple.png' },
+    { value: 'athletic' as BodyType, label: 'Atlético', desc: 'Hombros más marcados que caderas', image: '/images/onboarding/body-types/male-athletic.png' },
+    { value: 'heavy' as BodyType, label: 'Robusto', desc: 'Estructura grande y sólida', image: '/images/onboarding/body-types/male-heavy.png' },
   ];
 
   private readonly femaleBodyTypes = [
@@ -884,14 +893,33 @@ export class OnboardingPage {
     { value: 'athletic' as BodyType, label: 'Triángulo invertido', desc: 'Hombros más anchos que caderas', image: '/images/onboarding/body-types/inverted-triangle.png' },
   ];
 
-  readonly currentBodyTypes = computed(() => {
+  private readonly neutralBodyTypes = [
+    { value: 'slim' as BodyType, label: 'Delgado', desc: 'Hombros, cintura y caderas similares', image: '/images/onboarding/body-types/neutral-rectangle.png' },
+    { value: 'curvy' as BodyType, label: 'Caderas marcadas', desc: 'Caderas más anchas que hombros', image: '/images/onboarding/body-types/neutral-pear.png' },
+    { value: 'average' as BodyType, label: 'Equilibrado', desc: 'Hombros y caderas proporcionados', image: '/images/onboarding/body-types/neutral-hourglass.png' },
+    { value: 'plus' as BodyType, label: 'Centro amplio', desc: 'Mayor volumen en la zona media', image: '/images/onboarding/body-types/neutral-apple.png' },
+    { value: 'athletic' as BodyType, label: 'Hombros marcados', desc: 'Hombros más anchos que caderas', image: '/images/onboarding/body-types/neutral-inverted-triangle.png' },
+    { value: 'heavy' as BodyType, label: 'Robusto', desc: 'Estructura grande y sólida', image: '/images/onboarding/body-types/neutral-heavy.png' },
+  ];
+
+  currentBodyTypes() {
     const gender = this.basicForm.get('gender')?.value;
-    const base = gender === 'female' ? this.femaleBodyTypes : this.maleBodyTypes;
+    const base = gender === 'male'
+      ? this.maleBodyTypes
+      : gender === 'female'
+        ? this.femaleBodyTypes
+        : this.neutralBodyTypes;
+    const notSureImage = gender === 'male'
+      ? '/images/onboarding/body-types/male-not-sure.png'
+      : gender === 'female'
+        ? '/images/onboarding/body-types/not-sure.png'
+        : '/images/onboarding/body-types/neutral-not-sure.png';
+
     return [
       ...base,
-      { value: 'notSure' as BodyType, label: 'No estoy seguro', desc: 'Déjalo en automático', image: '/images/onboarding/body-types/not-sure.png' },
+      { value: 'notSure' as BodyType, label: 'No estoy seguro', desc: 'Déjalo en automático', image: notSureImage },
     ];
-  });
+  }
 
   readonly activityLevels = [
     { value: 'Sedentary' as ActivityLevel, label: 'Sedentario', desc: 'Trabajo de oficina, poco o nada de ejercicio', icon: '&#x1F4BB;', color: 'var(--cream-warm)' },
@@ -1088,6 +1116,18 @@ export class OnboardingPage {
     this.medicalForm.patchValue({ allergies: [...this.selectedAllergies] });
   }
 
+  selectGender(value: string) {
+    this.basicForm.patchValue({ gender: value });
+
+    const currentBodyType = this.bodyTypeForm.value.bodyType;
+    if (!currentBodyType) return;
+
+    const validBodyTypes = this.currentBodyTypes().map(bt => bt.value);
+    if (!validBodyTypes.includes(currentBodyType)) {
+      this.bodyTypeForm.patchValue({ bodyType: null });
+    }
+  }
+
   nextStep() {
     if (this.step() >= this.currentSteps().length - 2) return;
     if (!this.isStepValid()) return;
@@ -1114,6 +1154,9 @@ export class OnboardingPage {
       case 2:
         this.metricsForm.markAllAsTouched();
         return this.metricsForm.valid;
+      case 3:
+        this.bodyTypeForm.markAllAsTouched();
+        return this.bodyTypeForm.valid;
       default: return true;
     }
   }
@@ -1219,8 +1262,9 @@ export class OnboardingPage {
   }
 
   private submitBodyType() {
-    const raw = (this.bodyTypeForm.value.bodyType ?? 'slim') as string;
-    this.onboarding.completeStep4BodyType({ bodyType: (raw === 'notSure' ? 'average' : raw) as BodyType }).subscribe();
+    if (this.bodyTypeForm.invalid) return;
+    const raw = this.bodyTypeForm.value.bodyType!;
+    this.onboarding.completeStep4BodyType({ bodyType: raw }).subscribe();
   }
 
   private submitActivity() {

@@ -45,7 +45,7 @@ export interface MetricsRequest {
   goalType?: 'WeightLoss' | 'BodyRecomp' | 'MuscleGain' | 'Maintenance' | 'Health';
 }
 
-export type BodyType = 'slim' | 'average' | 'athletic' | 'curvy' | 'plus' | 'heavy';
+export type BodyType = 'slim' | 'average' | 'athletic' | 'curvy' | 'plus' | 'heavy' | 'notSure';
 
 export interface BodyTypeRequest {
   bodyType: BodyType;
