@@ -840,7 +840,7 @@ export class OnboardingPage {
 
   readonly basicForm = this.fb.group({
     dateOfBirth: ['', Validators.required],
-    gender: ['male' as string],
+    gender: [null as string | null, Validators.required],
   });
 
   readonly metricsForm = this.fb.group({
@@ -1012,10 +1012,19 @@ export class OnboardingPage {
     this.requiresOverride.set(status.requiresOverride);
 
     const serverStep = this.mapSuggestedStep(status.currentSuggestedStep);
-    if (serverStep > this.step()) {
-      this.step.set(serverStep);
+    const targetStep = this.nextVisibleStepFromStatus(status, serverStep);
+    if (targetStep > this.step()) {
+      this.step.set(targetStep);
       this.saveToStorage();
     }
+  }
+
+  private nextVisibleStepFromStatus(status: OnboardingStatusResponse, serverStep: number): number {
+    if (status.stepsCompleted.step1Group && !this.basicForm.value.gender && serverStep > 1) {
+      return 1;
+    }
+
+    return serverStep;
   }
 
   private hydrateBasicDataFromProfile() {

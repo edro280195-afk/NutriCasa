@@ -23,6 +23,9 @@ import { gsap } from 'gsap';
         NutriCasa
       </div>
       <div class="page-actions">
+        @if (currentMemberRole() && currentMemberRole() !== 'owner') {
+          <button class="header-action danger" type="button" (click)="confirmLeaveGroup()">Salir del grupo</button>
+        }
         <span class="connection-dot" [class.online]="online()"></span>
       </div>
     </div>
@@ -140,46 +143,49 @@ import { gsap } from 'gsap';
         }
       </div>
 
-      @if (currentMemberRole() === 'owner' || currentMemberRole() === 'admin') {
-        <div class="family-section">
-          <div class="section-head">
-            <div>
-              <h2 class="section-title">Miembros</h2>
-              <p class="section-subtitle">Roles, permisos y subgrupos de la familia.</p>
-            </div>
+      <div class="family-section">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">Miembros</h2>
+            <p class="section-subtitle">Vista rápida del grupo y permisos disponibles.</p>
           </div>
-          <div class="member-list">
-            @for (m of members(); track m.userId) {
-              <div class="member-row">
-                <div class="member-av" [style.background]="getColor(m.userId)">{{ m.fullName.charAt(0) }}</div>
-                <div class="member-info">
-                  <span class="member-name">{{ m.fullName }}</span>
-                  <span class="member-role">{{ roleLabel(m.role) }}</span>
-                </div>
-                @if (m.userId !== currentUserId()) {
-                  <div class="member-actions">
-                    @if (m.role !== 'owner' && m.role !== 'pending') {
-                      <select class="member-role-select" [value]="m.role" (change)="onRoleChange(m.userId, $any($event.target).value)">
-                        <option value="member">Miembro</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    }
-                    @if (m.role === 'owner') {
-                      <button class="btn-sm btn-outline" (click)="showTransfer()">Transferir</button>
-                    }
-                    @if (m.role !== 'owner') {
-                      <button class="btn-remove" (click)="confirmRemoveMember(m)" title="Remover del grupo">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
-                      </button>
-                    }
-                  </div>
-                }
-              </div>
-            }
-          </div>
-          <button class="btn-link" (click)="showCreateSubgroup.set(true)">+ Crear subgrupo</button>
+          @if (currentMemberRole() === 'owner' || currentMemberRole() === 'admin') {
+            <button class="btn-sm btn-outline" (click)="showCreateSubgroup.set(true)">Crear subgrupo</button>
+          }
         </div>
-      }
+        <div class="member-list">
+          @for (m of members(); track m.userId) {
+            <div class="member-row" [class.is-current]="m.userId === currentUserId()">
+              <div class="member-av" [style.background]="getColor(m.userId)">{{ initials(m.fullName) }}</div>
+              <div class="member-info">
+                <span class="member-name">{{ m.fullName }}</span>
+                <span class="member-meta">{{ roleLabel(m.role) }} · desde {{ formatIsoDate(m.joinedAt) }}</span>
+              </div>
+              @if (m.userId === currentUserId()) {
+                <span class="member-self">Tú</span>
+              }
+              @if ((currentMemberRole() === 'owner' || currentMemberRole() === 'admin') && m.userId !== currentUserId()) {
+                <div class="member-actions">
+                  @if (m.role !== 'owner' && m.role !== 'pending') {
+                    <select class="member-role-select" [value]="m.role" (change)="onRoleChange(m.userId, $any($event.target).value)">
+                      <option value="member">Miembro</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  }
+                  @if (m.role === 'owner') {
+                    <button class="btn-sm btn-outline" (click)="showTransfer()">Transferir</button>
+                  }
+                  @if (m.role !== 'owner') {
+                    <button class="btn-remove" (click)="confirmRemoveMember(m)" title="Remover del grupo">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
 
       <div class="family-section sl-section">
         <div class="section-head">
@@ -477,6 +483,21 @@ import { gsap } from 'gsap';
           </div>
         </div>
       }
+
+      @if (showLeaveGroupModal()) {
+        <div class="modal-backdrop" (click)="showLeaveGroupModal.set(false)">
+          <div class="modal-card" (click)="$event.stopPropagation()">
+            <h3 class="modal-title">Salir del grupo</h3>
+            <p class="modal-desc">Tus datos personales e historial se conservan. Si vuelves a entrar con el mismo código, recuperas tu membresía anterior.</p>
+            <div class="modal-actions">
+              <button class="btn-ghost" (click)="showLeaveGroupModal.set(false)">Cancelar</button>
+              <button class="btn-coral" (click)="onLeaveGroup()" [disabled]="leavingGroup()">
+                {{ leavingGroup() ? 'Saliendo...' : 'Salir del grupo' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     }
   </div>
   `,
@@ -487,6 +508,9 @@ import { gsap } from 'gsap';
     .page-brand { font-family: var(--display); font-size: 22px; font-weight: 500; color: var(--pine); display: flex; align-items: center; gap: 8px; }
     .page-brand svg { width: 22px; height: 22px; fill: var(--mint); }
     .page-actions { display: flex; gap: 10px; align-items: center; }
+    .header-action { border: 1px solid var(--line); background: var(--paper); color: var(--ink-soft); border-radius: var(--r-pill); padding: 7px 12px; font-size: 11px; font-weight: 700; }
+    .header-action.danger { border-color: color-mix(in srgb, var(--coral) 45%, var(--line)); color: var(--coral); }
+    .header-action:hover { background: var(--cream-warm); }
     .connection-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-soft); transition: background 0.3s; }
     .connection-dot.online { background: var(--mint); box-shadow: 0 0 6px var(--mint); }
 
@@ -529,10 +553,12 @@ import { gsap } from 'gsap';
 
     .member-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin-bottom: 12px; }
     .member-row { display: flex; align-items: center; gap: 12px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px; min-width: 0; }
+    .member-row.is-current { border-color: color-mix(in srgb, var(--mint) 55%, var(--line)); background: color-mix(in srgb, var(--mint-soft) 52%, var(--paper)); }
     .member-av { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--pine-darker); flex-shrink: 0; }
-    .member-info { flex: 1; }
+    .member-info { flex: 1; min-width: 0; }
     .member-name { font-size: 13px; font-weight: 600; color: var(--ink); display: block; }
-    .member-role { display: inline-flex; width: fit-content; margin-top: 4px; font-size: 10px; color: var(--pine); background: var(--mint-soft); border-radius: var(--r-pill); padding: 2px 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .member-meta { display: block; margin-top: 3px; font-size: 11px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .member-self { display: inline-flex; align-items: center; justify-content: center; border-radius: var(--r-pill); background: var(--pine); color: var(--cream); padding: 4px 9px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
     .member-actions { display: flex; gap: 6px; align-items: center; }
     .member-role-select { font-size: 11px; padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper); color: var(--ink); cursor: pointer; }
     .btn-remove { width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent; color: var(--ink-soft); cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -688,16 +714,6 @@ import { gsap } from 'gsap';
     .modal-textarea { resize: vertical; min-height: 60px; }
     .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
 
-    .page-header { animation: slideDown 0.5s var(--ease-out); }
-    .family-hero { animation: slideUp 0.7s var(--ease-out) 0.05s both; }
-    .family-stats { animation: slideUp 0.7s var(--ease-out) 0.1s both; }
-    .family-section:nth-of-type(1) { animation: slideUp 0.7s var(--ease-out) 0.15s both; }
-    .family-section:nth-of-type(2) { animation: slideUp 0.7s var(--ease-out) 0.2s both; }
-    .family-section:nth-of-type(3) { animation: slideUp 0.7s var(--ease-out) 0.25s both; }
-    .family-section:nth-of-type(4) { animation: slideUp 0.7s var(--ease-out) 0.3s both; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-
     .composer-types { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
     .ctype-pill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--cream); color: var(--ink-muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
     .ctype-pill.active { background: var(--pine); border-color: var(--pine); color: var(--cream); }
@@ -738,6 +754,19 @@ import { gsap } from 'gsap';
     .sg-code { font-size: 20px; font-weight: 700; color: var(--pine); letter-spacing: 0.12em; flex: 1; text-align: left; }
     .sg-note { font-size: 11px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 20px; background: rgba(91,192,150,0.06); border-radius: var(--r-md); padding: 10px 12px; border: 1px solid rgba(91,192,150,0.15); }
     .sg-done-btn { width: 100%; }
+
+    @media (max-width: 620px) {
+      .page { padding-inline: 14px; }
+      .page-actions { gap: 8px; }
+      .header-action { padding-inline: 10px; }
+      .family-stats { gap: 8px; }
+      .member-list { grid-template-columns: 1fr; }
+      .sl-overview { grid-template-columns: 1fr 1fr; }
+      .sl-item { grid-template-columns: 28px minmax(0, 1fr) auto; }
+      .sl-cost { grid-column: 2 / -1; justify-self: start; }
+      .feed-reactions { align-items: flex-start; flex-direction: column; }
+      .reaction-container { align-self: flex-end; }
+    }
   `]
 })
 export class FamilyPage implements OnInit, OnDestroy {
@@ -788,6 +817,8 @@ export class FamilyPage implements OnInit, OnDestroy {
   readonly transferring = signal(false);
   readonly removeTarget = signal<{ userId: string; fullName: string } | null>(null);
   readonly removing = signal(false);
+  readonly showLeaveGroupModal = signal(false);
+  readonly leavingGroup = signal(false);
 
   // Post composer
   readonly selectedPostType = signal('usertext');
@@ -1269,6 +1300,30 @@ export class FamilyPage implements OnInit, OnDestroy {
 
   // ── Shopping List ──
 
+  confirmLeaveGroup() {
+    if (!this.currentUserId() || this.currentMemberRole() === 'owner') return;
+    this.showLeaveGroupModal.set(true);
+  }
+
+  onLeaveGroup() {
+    const userId = this.currentUserId();
+    if (!userId || this.leavingGroup() || this.currentMemberRole() === 'owner') return;
+
+    this.leavingGroup.set(true);
+    this.family.removeMember(userId).subscribe({
+      next: () => {
+        this.leavingGroup.set(false);
+        this.showLeaveGroupModal.set(false);
+        this.toast.success('Saliste del grupo');
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.leavingGroup.set(false);
+        this.toast.error(this.errorMessage(err, 'No se pudo salir del grupo'));
+      }
+    });
+  }
+
   loadShoppingList() {
     this.shoppingListLoading.set(true);
     this.shoppingListError.set('');
@@ -1369,6 +1424,13 @@ export class FamilyPage implements OnInit, OnDestroy {
   }
 
   // ── UI helpers ──
+
+  initials(fullName: string): string {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '?';
+    const last = parts[parts.length - 1];
+    return `${parts[0].charAt(0)}${last?.charAt(0) ?? ''}`.toUpperCase();
+  }
 
   barWidth(value: number, entries: LeaderboardEntryDto[]): number {
     if (entries.length === 0) return 0;
