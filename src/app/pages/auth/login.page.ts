@@ -47,89 +47,99 @@ import { AuthService } from '../../services/auth.service';
     </div>
 
     <div class="login-form">
-      <div class="form-eyebrow stagger-in" style="--delay: 100ms">Iniciar sesión</div>
-      <h2 class="form-title stagger-in" style="--delay: 150ms">Hola otra vez, <span class="italic">¿cómo amaneciste?</span></h2>
-      <p class="form-subtitle stagger-in" style="--delay: 200ms">Entra para ver tu plan de hoy y los avances de tu familia.</p>
+      <div class="form-card">
+        <div class="form-eyebrow stagger-in" style="--delay: 100ms">Iniciar sesión</div>
+        <h2 class="form-title stagger-in" style="--delay: 150ms">Hola otra vez, <span class="italic">¿cómo amaneciste?</span></h2>
+        <p class="form-subtitle stagger-in" style="--delay: 200ms">Entra para ver tu plan de hoy y los avances de tu familia.</p>
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div class="field stagger-in" style="--delay: 250ms" [class.input-error]="form.get('email')?.invalid && form.get('email')?.touched">
-          <div class="field-input-wrap">
-            <input id="email" type="email" formControlName="email" placeholder=" " autocomplete="email">
-            <label for="email" class="floating-label">Correo electrónico</label>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+          <div class="field stagger-in" style="--delay: 250ms" [class.input-error]="form.get('email')?.invalid && form.get('email')?.touched">
+            <div class="field-input-wrap">
+              <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <input id="email" type="email" formControlName="email" placeholder=" " autocomplete="email">
+              <label for="email" class="floating-label">Correo electrónico</label>
+            </div>
+            @if (form.get('email')?.invalid && form.get('email')?.touched) {
+              <div class="field-error">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Correo electrónico requerido o inválido
+              </div>
+            }
           </div>
-          @if (form.get('email')?.invalid && form.get('email')?.touched) {
-            <div class="field-error">
+
+          <div class="field stagger-in" style="--delay: 320ms" [class.input-error]="form.get('password')?.invalid && form.get('password')?.touched">
+            <div class="field-input-wrap password-wrap">
+              <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" placeholder=" " autocomplete="current-password">
+              <label for="password" class="floating-label">Contraseña</label>
+              <button type="button" class="password-toggle" (click)="togglePassword()" aria-label="Mostrar contraseña">
+                @if (showPassword()) {
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                } @else {
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                }
+              </button>
+            </div>
+            @if (form.get('password')?.invalid && form.get('password')?.touched) {
+              <div class="field-error">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Contraseña requerida
+              </div>
+            }
+          </div>
+
+          <div class="field-row stagger-in" style="--delay: 390ms">
+            <label class="checkbox">
+              <input type="checkbox" formControlName="remember">
+              Recordarme en este dispositivo
+            </label>
+            <a routerLink="/auth/forgot-password" class="link">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          @if (error()) {
+            <div class="field-error stagger-in" style="--delay: 430ms; margin-bottom: 16px; justify-content: center;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
-              Correo electrónico requerido o inválido
+              {{ error() }}
             </div>
           }
-        </div>
 
-        <div class="field stagger-in" style="--delay: 320ms" [class.input-error]="form.get('password')?.invalid && form.get('password')?.touched">
-          <div class="field-input-wrap password-wrap">
-            <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" placeholder=" " autocomplete="current-password">
-            <label for="password" class="floating-label">Contraseña</label>
-            <button type="button" class="password-toggle" (click)="togglePassword()" aria-label="Mostrar contraseña">
-              @if (showPassword()) {
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              } @else {
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              }
-            </button>
-          </div>
-          @if (form.get('password')?.invalid && form.get('password')?.touched) {
-            <div class="field-error">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              Contraseña requerida
-            </div>
-          }
-        </div>
-
-        <div class="field-row stagger-in" style="--delay: 390ms">
-          <label class="checkbox">
-            <input type="checkbox" formControlName="remember">
-            Recordarme en este dispositivo
-          </label>
-          <a routerLink="/auth/forgot-password" class="link">¿Olvidaste tu contraseña?</a>
-        </div>
-
-        @if (error()) {
-          <div class="field-error stagger-in" style="--delay: 430ms; margin-bottom: 16px; justify-content: center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          <button type="submit" class="btn-primary stagger-in" style="--delay: 460ms" [disabled]="loading()">
+            @if (loading()) {
+              <span class="spinner"></span>
+            }
+            Entrar a mi cuenta
+            <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
             </svg>
-            {{ error() }}
-          </div>
-        }
+          </button>
+        </form>
 
-        <button type="submit" class="btn-primary stagger-in" style="--delay: 460ms" [disabled]="loading()">
-          @if (loading()) {
-            <span class="spinner"></span>
-          }
-          Entrar a mi cuenta
-          <svg class="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-          </svg>
-        </button>
-      </form>
+        <div class="form-foot stagger-in" style="--delay: 520ms">
+          ¿Es la primera vez que entras? <a routerLink="/auth/register">Únete a tu familia</a>
+        </div>
 
-      <div class="form-foot stagger-in" style="--delay: 520ms">
-        ¿Es la primera vez que entras? <a routerLink="/auth/register">Únete a tu familia</a>
-      </div>
-
-      <div class="terms stagger-in" style="--delay: 580ms">
-        Al entrar aceptas los <a routerLink="/legal/terms">términos de servicio</a> y el <a routerLink="/legal/privacy">aviso de privacidad</a>.
-        NutriCasa no sustituye atención médica profesional.
+        <div class="terms stagger-in" style="--delay: 580ms">
+          Al entrar aceptas los <a routerLink="/legal/terms">términos de servicio</a> y el <a routerLink="/legal/privacy">aviso de privacidad</a>.
+          NutriCasa no sustituye atención médica profesional.
+        </div>
       </div>
     </div>
   </div>
@@ -250,12 +260,73 @@ import { AuthService } from '../../services/auth.service';
     }
 
     .login-form {
-      display: flex; flex-direction: column;
-      justify-content: center;
+      background: radial-gradient(at 0% 0%, var(--mint-soft) 0px, transparent 50%),
+                  radial-gradient(at 100% 100%, var(--cream-warm) 0px, transparent 50%),
+                  var(--cream);
+      display: flex; align-items: center; justify-content: center;
       padding: 64px 48px;
-      max-width: 520px; width: 100%; margin: 0 auto;
+      position: relative;
+      overflow: hidden;
     }
     @media (max-width: 880px) { .login-form { padding: 40px 24px; } }
+
+    .login-form::before {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(91, 192, 150, 0.15) 0%, transparent 70%);
+      top: -50px;
+      right: -50px;
+      pointer-events: none;
+      animation: shape-drift-1 12s infinite alternate ease-in-out;
+    }
+    .login-form::after {
+      content: '';
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(232, 134, 107, 0.08) 0%, transparent 70%);
+      bottom: -50px;
+      left: -50px;
+      pointer-events: none;
+      animation: shape-drift-2 15s infinite alternate ease-in-out;
+    }
+    @keyframes shape-drift-1 {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(-30px, 40px) scale(1.1); }
+    }
+    @keyframes shape-drift-2 {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, -30px) scale(1.15); }
+    }
+
+    .form-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: var(--r-xl);
+      padding: 48px 40px;
+      box-shadow: 0 20px 40px rgba(15, 36, 25, 0.05),
+                  0 1px 3px rgba(15, 36, 25, 0.02);
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      z-index: 2;
+      animation: card-appear 0.8s var(--ease-spring) both;
+    }
+    @keyframes card-appear {
+      from { transform: translateY(24px) scale(0.97); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    @media (max-width: 480px) {
+      .form-card {
+        padding: 32px 20px;
+      }
+    }
 
     .form-eyebrow {
       font-size: 12px; font-weight: 700;
@@ -264,14 +335,14 @@ import { AuthService } from '../../services/auth.service';
     }
     .form-title {
       font-family: var(--display);
-      font-size: 38px; font-weight: 400;
+      font-size: 34px; font-weight: 400;
       letter-spacing: -0.02em; line-height: 1.15;
       color: var(--ink); margin-bottom: 8px;
     }
     .form-title .italic { color: var(--pine); }
     .form-subtitle {
       font-size: 15px; color: var(--ink-light);
-      margin-bottom: 36px;
+      margin-bottom: 32px;
     }
 
     .field {
@@ -293,9 +364,25 @@ import { AuthService } from '../../services/auth.service';
       box-shadow: 0 0 0 4px rgba(15, 61, 46, 0.08);
       transform: scale(1.005);
     }
+    
+    .field-icon {
+      position: absolute;
+      left: 18px;
+      color: var(--ink-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.25s ease;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .field-input-wrap:focus-within .field-icon {
+      color: var(--pine);
+    }
+    
     .field-input-wrap input {
       width: 100%;
-      padding: 24px 18px 8px 18px;
+      padding: 24px 18px 8px 48px;
       border: none !important;
       background: transparent !important;
       font-size: 15px;
@@ -307,7 +394,7 @@ import { AuthService } from '../../services/auth.service';
     
     .field-input-wrap label.floating-label {
       position: absolute;
-      left: 18px;
+      left: 48px;
       top: 50%;
       transform: translateY(-50%);
       font-size: 15px;
