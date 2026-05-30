@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
   <div class="login-wrap">
     <div class="login-hero">
       <div class="brand">
-        <div class="brand-mark"></div>
+        <img src="icons/logonutricasa.jpeg" alt="Logo" class="brand-logo-img">
         <div class="brand-name">NutriCasa</div>
       </div>
       <div class="hero-content">

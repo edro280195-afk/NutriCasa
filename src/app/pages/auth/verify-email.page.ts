@@ -10,7 +10,7 @@ import { AuthService } from '../../services/auth.service';
   <div class="wrap">
     <div class="card">
       <div class="brand">
-        <div class="brand-mark"></div>
+        <img src="icons/logonutricasa.jpeg" alt="Logo" class="brand-logo-img">
         <div class="brand-name">NutriCasa</div>
       </div>
 
