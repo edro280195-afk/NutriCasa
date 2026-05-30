@@ -3,6 +3,7 @@ export interface FamilyMemberDto {
   fullName: string;
   role: string;
   joinedAt: string;
+  subgroupName?: string;
 }
 
 export interface FamilyPostDto {

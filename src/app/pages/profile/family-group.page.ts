@@ -49,7 +49,12 @@ import type { FamilyMemberDto, FamilyStatsDto } from '../../models/family.models
             <div class="member-avatar">{{ member.fullName.charAt(0).toUpperCase() }}</div>
             <div class="member-info">
               <span class="member-name">{{ member.fullName }}</span>
-              <span class="member-role">{{ roleLabel(member.role) }}</span>
+              <span class="member-role">
+                {{ roleLabel(member.role) }}
+                @if (member.subgroupName) {
+                  · 🏠 {{ member.subgroupName }}
+                }
+              </span>
             </div>
             <div class="member-date">Desde {{ member.joinedAt | date:'MMM y' }}</div>
           </div>

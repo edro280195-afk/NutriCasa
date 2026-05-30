@@ -159,7 +159,13 @@ import { gsap } from 'gsap';
               <div class="member-av" [style.background]="getColor(m.userId)">{{ initials(m.fullName) }}</div>
               <div class="member-info">
                 <span class="member-name">{{ m.fullName }}</span>
-                <span class="member-meta">{{ roleLabel(m.role) }} · desde {{ formatIsoDate(m.joinedAt) }}</span>
+                <span class="member-meta">
+                  {{ roleLabel(m.role) }}
+                  @if (m.subgroupName) {
+                    · 🏠 {{ m.subgroupName }}
+                  }
+                  · desde {{ formatIsoDate(m.joinedAt) }}
+                </span>
               </div>
               @if (m.userId === currentUserId()) {
                 <span class="member-self">Tú</span>
