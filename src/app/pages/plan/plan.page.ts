@@ -168,7 +168,9 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
               </div>
               <div class="shopping-text">
                 <span class="shopping-title">Lista de compras</span>
-                <span class="shopping-total">$ {{ sl.totalEstimatedMxn | number:'1.0-0' }} MXN</span>
+                @if (sl.totalEstimatedMxn > 0) {
+                  <span class="shopping-total">$ {{ sl.totalEstimatedMxn | number:'1.0-0' }} MXN</span>
+                }
               </div>
               <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </summary>
@@ -177,15 +179,23 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
                 <div class="store-group">
                   <div class="store-header">
                     <span class="store-name">{{ store.storeName }}</span>
-                    <span class="store-total">$ {{ store.subtotalMxn | number:'1.0-2' }}</span>
+                    @if (store.subtotalMxn > 0) {
+                      <span class="store-total">$ {{ store.subtotalMxn | number:'1.0-2' }}</span>
+                    }
                   </div>
                   @for (item of store.items; track item.ingredientName) {
                     <label class="store-item">
                       <input type="checkbox" [checked]="isChecked(store.storeCode, item.ingredientName)" (change)="toggleItem(store.storeCode, item.ingredientName)">
                       <span class="store-item-dot"></span>
                       <span class="store-item-name" [class.checked]="isChecked(store.storeCode, item.ingredientName)">{{ item.ingredientName }}</span>
-                      <span class="store-item-qty">{{ item.totalAmount }} {{ item.unit }}</span>
-                      <span class="store-item-cost">$ {{ item.estimatedCostMxn | number:'1.0-2' }}</span>
+                      @if (item.totalAmount > 0) {
+                        <span class="store-item-qty">{{ item.totalAmount }} {{ item.unit }}</span>
+                      } @else if (item.unit) {
+                        <span class="store-item-qty">{{ item.unit }}</span>
+                      }
+                      @if (item.estimatedCostMxn > 0) {
+                        <span class="store-item-cost">$ {{ item.estimatedCostMxn | number:'1.0-2' }}</span>
+                      }
                     </label>
                   }
                 </div>
@@ -862,7 +872,7 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
       flex-shrink: 0;
     }
     .shopping-section[open] .chevron { transform: rotate(180deg); }
-    .shopping-body { padding: 0 16px 16px; border-top: 1px solid var(--line); }
+    .shopping-body { padding: 0 16px 16px; border-top: 1px solid var(--line); max-height: 350px; overflow-y: auto; }
     .store-group { margin-top: 14px; }
     .store-header {
       display: flex;
@@ -1471,6 +1481,7 @@ export class PlanPage implements OnDestroy {
       next: (data) => {
         if (data.generationStatus === 'Failed' || data.generationStatus === 'Pending') {
           this.plan.set(null);
+          this.generating.set(false);
           return;
         }
 
@@ -1508,10 +1519,13 @@ export class PlanPage implements OnDestroy {
           }).catch(err => {
             console.error('[PlanPage] Failed to reconnect to generation hub:', err);
           });
+        } else {
+          this.generating.set(false);
         }
       },
       error: () => {
         this.plan.set(null);
+        this.generating.set(false);
       }
     });
   }
