@@ -1441,6 +1441,9 @@ export class PlanPage implements OnDestroy {
             this.loadPlan();
             this.cleanupHubSubscriptions();
             this.hubProgress.disconnect();
+            setTimeout(() => {
+              this.showSuccess.set(false);
+            }, 2000);
           }
         });
 
@@ -1488,6 +1491,9 @@ export class PlanPage implements OnDestroy {
                 this.loadPlan();
                 this.cleanupHubSubscriptions();
                 this.hubProgress.disconnect();
+                setTimeout(() => {
+                  this.showSuccess.set(false);
+                }, 2000);
               }
             });
 
