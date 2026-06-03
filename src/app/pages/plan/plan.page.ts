@@ -1,7 +1,8 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnDestroy } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { PlanService } from '../../services/plan.service';
 import { RecipeService } from '../../services/recipe.service';
+import { PlanGenerationHubService } from '../../services/plan-generation-hub.service';
 import { LottieAnimationComponent } from '../../components/lottie-animation/lottie-animation.component';
 import { NcToastService } from '../../shared/components/nc-toast.service';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -43,8 +44,16 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
         <div class="loading-animation">
           <app-lottie src="/lottie/cooking.json" width="160px" height="160px"></app-lottie>
         </div>
-        <h2 class="loading-title">Creando tu plan...</h2>
-        <p class="loading-sub">Nuestra IA está diseñando comidas keto personalizadas para ti</p>
+        <h2 class="loading-title">
+          @if (hubProgress.currentEmoji()) {
+            {{ hubProgress.currentEmoji() }}
+          }
+          {{ hubProgress.currentMessage() || 'Creando tu plan...' }}
+        </h2>
+        <div class="progress-bar-container">
+          <div class="progress-bar" [style.width.%]="hubProgress.progress()"></div>
+        </div>
+        <p class="loading-sub">{{ hubProgress.progressLabel() }} ({{ hubProgress.progress() }}%)</p>
         <div class="loading-dots">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
         </div>
@@ -453,6 +462,21 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
       color: var(--ink-light);
       margin: 0 0 20px;
       line-height: 1.5;
+    }
+    .progress-bar-container {
+      width: 100%;
+      max-width: 240px;
+      height: 8px;
+      background: var(--line);
+      border-radius: var(--r-pill);
+      margin: 16px auto 10px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--mint);
+      border-radius: var(--r-pill);
+      transition: width 0.3s ease;
     }
     .loading-dots {
       display: flex;
@@ -1304,10 +1328,14 @@ import type { FavoriteRecipeDto } from '../../models/recipe.models';
     }
   `]
 })
-export class PlanPage {
+export class PlanPage implements OnDestroy {
   private readonly planService = inject(PlanService);
   private readonly recipeService = inject(RecipeService);
   private readonly toast = inject(NcToastService);
+  readonly hubProgress = inject(PlanGenerationHubService);
+
+  private subCompleted: any = null;
+  private subError: any = null;
 
   readonly plan = signal<PlanGenerationResult | null>(null);
   readonly generating = signal(false);
@@ -1370,24 +1398,67 @@ export class PlanPage {
     this.selectedLogStatus.set(null);
   }
 
-  generatePlan(forceRegenerate = false) {
+  ngOnDestroy() {
+    this.cleanupHubSubscriptions();
+    this.hubProgress.disconnect();
+  }
+
+  private cleanupHubSubscriptions() {
+    if (this.subCompleted) {
+      this.subCompleted.unsubscribe();
+      this.subCompleted = null;
+    }
+    if (this.subError) {
+      this.subError.unsubscribe();
+      this.subError = null;
+    }
+  }
+
+  async generatePlan(forceRegenerate = false) {
     this.generating.set(true);
     this.showSuccess.set(false);
+    this.hubProgress.resetState();
+
+    try {
+      await this.hubProgress.connect();
+    } catch (err) {
+      console.error('[PlanPage] Error connecting to SignalR:', err);
+    }
+
+    this.cleanupHubSubscriptions();
+
     this.planService.generate({
       weekStartDate: new Date().toISOString().split('T')[0],
       forceRegenerate,
     }).subscribe({
-      next: (data) => {
-        this.plan.set(data);
-        this.generating.set(false);
-        this.showSuccess.set(true);
-        setTimeout(() => this.showSuccess.set(false), 2500);
+      next: (res: any) => {
+        console.log('[PlanPage] Plan generation requested, Job ID:', res?.jobId);
+        
+        this.subCompleted = this.hubProgress.onCompleted$.subscribe({
+          next: () => {
+            this.generating.set(false);
+            this.showSuccess.set(true);
+            this.loadPlan();
+            this.cleanupHubSubscriptions();
+            this.hubProgress.disconnect();
+          }
+        });
+
+        this.subError = this.hubProgress.onError$.subscribe({
+          next: (event) => {
+            this.generating.set(false);
+            this.toast.error(event.message || 'Error durante la generación');
+            this.cleanupHubSubscriptions();
+            this.hubProgress.disconnect();
+          }
+        });
       },
       error: (err: any) => { 
         this.generating.set(false); 
-        const msg = err.error?.message || err.message || 'Error al generar el plan';
+        const msg = err.error?.message || err.message || 'Error al solicitar la generación del plan';
         this.toast.error(msg); 
-        console.error('Generate Plan Error:', err);
+        console.error('Generate Plan Request Error:', err);
+        this.hubProgress.disconnect();
       },
     });
   }
