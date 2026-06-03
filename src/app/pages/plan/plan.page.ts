@@ -1466,9 +1466,43 @@ export class PlanPage implements OnDestroy {
   private loadPlan() {
     this.planService.getCurrent().subscribe({
       next: (data) => {
+        if (data.generationStatus === 'Failed' || data.generationStatus === 'Pending') {
+          this.plan.set(null);
+          return;
+        }
+
         this.plan.set(data);
         this.selectedDay.set(this.getDefaultDayIndex(data.days));
         this.loadMealLogs(data);
+
+        if (data.generationStatus === 'Generating') {
+          this.generating.set(true);
+          this.hubProgress.resetState();
+          this.hubProgress.connect().then(() => {
+            this.cleanupHubSubscriptions();
+
+            this.subCompleted = this.hubProgress.onCompleted$.subscribe({
+              next: () => {
+                this.generating.set(false);
+                this.showSuccess.set(true);
+                this.loadPlan();
+                this.cleanupHubSubscriptions();
+                this.hubProgress.disconnect();
+              }
+            });
+
+            this.subError = this.hubProgress.onError$.subscribe({
+              next: (event) => {
+                this.generating.set(false);
+                this.toast.error(event.message || 'Error durante la generación');
+                this.cleanupHubSubscriptions();
+                this.hubProgress.disconnect();
+              }
+            });
+          }).catch(err => {
+            console.error('[PlanPage] Failed to reconnect to generation hub:', err);
+          });
+        }
       },
       error: () => {
         this.plan.set(null);

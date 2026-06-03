@@ -16,6 +16,7 @@ export interface PlanGenerationResult {
   days: DayPlanDto[];
   macros: KetoProfileResult;
   shoppingList?: ShoppingListDto;
+  generationStatus?: 'Pending' | 'Generating' | 'Completed' | 'Failed';
 }
 
 export interface DayPlanDto {
